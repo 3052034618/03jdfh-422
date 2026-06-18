@@ -14,20 +14,27 @@ import {
   generateComparisonMetrics,
   getStrengthColor,
   generateReplayReport,
-  groupSessionsByLevel
+  groupSessionsByLevel,
+  compareMisleadingStats,
+  getStatusText,
+  generateVersionTrend
 } from '@/utils/heatmap';
 import { getClueCardById } from '@/data/mockClueCards';
+import dayjs from 'dayjs';
 
 type TabType = 'heatmap' | 'confusion' | 'insights' | 'compare' | 'replay';
+type ReplaySubTab = 'single' | 'trend';
 
 const StatisticsPage: React.FC = () => {
-  const { sessions, feedbacks, initStore } = useAppStore();
+  const { sessions, feedbacks, initStore, getAllLevels } = useAppStore();
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('heatmap');
+  const [replaySubTab, setReplaySubTab] = useState<ReplaySubTab>('single');
   const [compareSessionId1, setCompareSessionId1] = useState<string>('');
   const [compareSessionId2, setCompareSessionId2] = useState<string>('');
   const [selectingSlot, setSelectingSlot] = useState<'A' | 'B' | null>(null);
   const [compareLevelFilter, setCompareLevelFilter] = useState<string>('');
+  const [trendLevelId, setTrendLevelId] = useState<string>('');
 
   useEffect(() => {
     initStore();
@@ -49,6 +56,19 @@ const StatisticsPage: React.FC = () => {
       }
     }
   }, [sessions, compareSessionId1, compareSessionId2]);
+
+  const allLevels = useMemo(() => getAllLevels(), [getAllLevels, sessions]);
+
+  useEffect(() => {
+    if (activeTab === 'replay' && !trendLevelId && allLevels.length > 0) {
+      const levelWithMultiVersions = allLevels.find(l => l.sessionCount >= 2);
+      if (levelWithMultiVersions) {
+        setTrendLevelId(levelWithMultiVersions.id);
+      } else if (allLevels.length > 0) {
+        setTrendLevelId(allLevels[0].id);
+      }
+    }
+  }, [activeTab, allLevels, trendLevelId]);
 
   const session = useMemo(
     () => sessions.find(s => s.id === selectedSessionId),
@@ -84,6 +104,11 @@ const StatisticsPage: React.FC = () => {
     if (!session) return null;
     return generateReplayReport(session, sessionFeedbacks);
   }, [session, sessionFeedbacks]);
+
+  const versionTrend = useMemo(() => {
+    if (!trendLevelId) return null;
+    return generateVersionTrend(trendLevelId, sessions, feedbacks);
+  }, [trendLevelId, sessions, feedbacks]);
 
   const levelGroups = useMemo(() => {
     const map = groupSessionsByLevel(sessions);
@@ -130,8 +155,23 @@ const StatisticsPage: React.FC = () => {
     return calculateTrueClueStats(compareFeedbacksB, compareSessionB.clueCardIds).slice(0, 5);
   }, [compareSessionB, compareFeedbacksB]);
 
+  const compareMisleadingStatsA = useMemo(() => {
+    if (!compareSessionA) return [];
+    return calculateMisleadingStats(compareFeedbacksA, compareSessionA.clueCardIds);
+  }, [compareSessionA, compareFeedbacksA]);
+
+  const compareMisleadingStatsB = useMemo(() => {
+    if (!compareSessionB) return [];
+    return calculateMisleadingStats(compareFeedbacksB, compareSessionB.clueCardIds);
+  }, [compareSessionB, compareFeedbacksB]);
+
+  const misleadingCompare = useMemo(
+    () => compareMisleadingStats(compareMisleadingStatsA, compareMisleadingStatsB),
+    [compareMisleadingStatsA, compareMisleadingStatsB]
+  );
+
   const compareConfusionA = useMemo(() => getTopConfusionCards(compareFeedbacksA, 5), [compareFeedbacksA]);
-  const compareConfusionB = useMemo(() => getTopConfusionCards(compareFeedbacksB, 5), [compareFeedbacksB]);
+  const compareConfusionB = useMemo(() => getTopConfusionCards(compareFeedbacksB, 5), [compareConfusionB]);
 
   const insights = useMemo(() => {
     if (!session || sessionFeedbacks.length === 0) return [];
@@ -239,6 +279,15 @@ const StatisticsPage: React.FC = () => {
     if (!compareLevelFilter) return availableSessions;
     return availableSessions.filter(s => s.levelId === compareLevelFilter);
   }, [availableSessions, compareLevelFilter]);
+
+  const renderDeltaTag = (delta: number, higherIsBetter: boolean) => {
+    if (delta === 0) return <Text className={classnames(styles.trendMetricDelta, styles.same)}>-</Text>;
+    const good = higherIsBetter ? delta > 0 : delta < 0;
+    const bad = higherIsBetter ? delta < 0 : delta > 0;
+    const cls = good ? (delta > 0 ? styles.upGood : styles.downGood) : (bad ? (delta > 0 ? styles.upBad : styles.downBad) : styles.same);
+    const sign = delta > 0 ? '+' : '';
+    return <Text className={classnames(styles.trendMetricDelta, cls)}>{sign}{delta}</Text>;
+  };
 
   return (
     <View className={styles.page}>
@@ -520,6 +569,49 @@ const StatisticsPage: React.FC = () => {
                   </View>
                 </View>
 
+                <Text className={styles.sectionTitle}>误导线索变化</Text>
+                <View className={styles.compareCharts}>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>
+                      错误关联率（A → B）
+                    </Text>
+                    {misleadingCompare.length === 0 ? (
+                      <Text style={{ fontSize: 26, color: '#6B7280', textAlign: 'center' }}>
+                        暂无误导线索数据
+                      </Text>
+                    ) : (
+                      misleadingCompare.map(item => (
+                        <View key={item.cardId} className={styles.misleadingCompareRow}>
+                          <View style={{ flex: 1 }}>
+                            <Text className={styles.misleadingCompareName}>
+                              {item.cardName}
+                              <Text className={styles.misleadingCompareBadge}>误导</Text>
+                            </Text>
+                          </View>
+                          <View className={styles.misleadingCompareValues}>
+                            <Text className={styles.misleadingCompareValue}>
+                              {Math.round(item.rateA * 100)}%
+                            </Text>
+                            <Text className={styles.misleadingCompareArrow}>→</Text>
+                            <Text className={styles.misleadingCompareValue}>
+                              {Math.round(item.rateB * 100)}%
+                            </Text>
+                            <Text className={classnames(styles.misleadingCompareDiff, styles[item.trend])}>
+                              {item.diff === 0 ? '-' : item.diff > 0 ? `+${item.diff}%` : `${item.diff}%`}
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    )}
+                    {misleadingCompare.length > 0 && (
+                      <View style={{ marginTop: 12 }}>
+                        <Text style={{ fontSize: 22, color: '#DC2626' }}>红色数字=误导变强</Text>
+                        <Text style={{ fontSize: 22, color: '#10B981' }}>绿色数字=误导已削弱</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
                 <Text className={styles.sectionTitle}>困惑高频卡片变化</Text>
                 <View className={styles.compareCharts}>
                   <View className={styles.compareChartColumn}>
@@ -620,101 +712,241 @@ const StatisticsPage: React.FC = () => {
 
         {activeTab === 'replay' && (
           <View>
-            {!session ? (
-              <View className={styles.emptyTip}>
-                <Text className={styles.emptyTipText}>请先选择测试场次</Text>
+            <View className={styles.replaySubTabs}>
+              <View
+                className={classnames(styles.replaySubTab, replaySubTab === 'single' && styles.active)}
+                onClick={() => setReplaySubTab('single')}
+              >
+                <Text className={classnames(styles.replaySubTabText, replaySubTab === 'single' && styles.active)}>
+                  单场复盘
+                </Text>
               </View>
-            ) : !replayReport ? (
-              <View className={styles.emptyTip}>
-                <Text className={styles.emptyTipText}>暂无数据</Text>
+              <View
+                className={classnames(styles.replaySubTab, replaySubTab === 'trend' && styles.active)}
+                onClick={() => setReplaySubTab('trend')}
+              >
+                <Text className={classnames(styles.replaySubTabText, replaySubTab === 'trend' && styles.active)}>
+                  版本趋势
+                </Text>
               </View>
-            ) : (
+            </View>
+
+            {replaySubTab === 'single' && (
               <View>
-                <View className={styles.replayDataGrid}>
-                  <View className={styles.replayDataChip}>
-                    <Text className={styles.replayDataLabel}>场次</Text>
-                    <Text className={styles.replayDataValue}>{replayReport.sessionName}</Text>
+                {!session ? (
+                  <View className={styles.emptyTip}>
+                    <Text className={styles.emptyTipText}>请先选择测试场次</Text>
                   </View>
-                  <View className={styles.replayDataChip}>
-                    <Text className={styles.replayDataLabel}>关卡</Text>
-                    <Text className={styles.replayDataValue}>{replayReport.levelName}</Text>
+                ) : !replayReport ? (
+                  <View className={styles.emptyTip}>
+                    <Text className={styles.emptyTipText}>暂无数据</Text>
                   </View>
-                  <View className={styles.replayDataChip}>
-                    <Text className={styles.replayDataLabel}>反馈</Text>
-                    <Text className={styles.replayDataValue}>{replayReport.submittedPlayers}/{replayReport.totalPlayers}</Text>
-                  </View>
-                </View>
-
-                <View className={styles.replayCard}>
-                  <Text className={styles.replayCardTitle}>📋 整体评估</Text>
-                  <Text className={styles.replayAssessment}>
-                    {replayReport.summary.overallAssessment}
-                  </Text>
-                </View>
-
-                {replayReport.summary.trueClueHighlights.length > 0 && (
-                  <View className={styles.replayCard}>
-                    <Text className={styles.replayCardTitle}>🔍 真线索识别分析</Text>
-                    <View className={styles.replayBulletList}>
-                      {replayReport.summary.trueClueHighlights.map((h, i) => (
-                        <Text key={i} className={styles.replayBulletItem}>{h}</Text>
-                      ))}
+                ) : (
+                  <View>
+                    <View className={styles.replayDataGrid}>
+                      <View className={styles.replayDataChip}>
+                        <Text className={styles.replayDataLabel}>场次</Text>
+                        <Text className={styles.replayDataValue}>{replayReport.sessionName}</Text>
+                      </View>
+                      <View className={styles.replayDataChip}>
+                        <Text className={styles.replayDataLabel}>关卡</Text>
+                        <Text className={styles.replayDataValue}>{replayReport.levelName}</Text>
+                      </View>
+                      <View className={styles.replayDataChip}>
+                        <Text className={styles.replayDataLabel}>反馈</Text>
+                        <Text className={styles.replayDataValue}>{replayReport.submittedPlayers}/{replayReport.totalPlayers}</Text>
+                      </View>
                     </View>
-                  </View>
-                )}
 
-                {replayReport.summary.misleadingAlerts.length > 0 && (
-                  <View className={styles.replayCard}>
-                    <Text className={styles.replayCardTitle}>🎭 误导线索预警</Text>
-                    <View className={styles.replayBulletList}>
-                      {replayReport.summary.misleadingAlerts.map((a, i) => (
-                        <Text key={i} className={styles.replayBulletItem}>{a}</Text>
-                      ))}
+                    <View className={styles.replayCard}>
+                      <Text className={styles.replayCardTitle}>📋 整体评估</Text>
+                      <Text className={styles.replayAssessment}>
+                        {replayReport.summary.overallAssessment}
+                      </Text>
                     </View>
-                  </View>
-                )}
 
-                {replayReport.topConnections.length > 0 && (
-                  <View className={styles.replayCard}>
-                    <Text className={styles.replayCardTitle}>🔥 连接热区 TOP5</Text>
-                    {replayReport.topConnections.map((conn, idx) => {
-                      const fromCard = getClueCardById(conn.from);
-                      const toCard = getClueCardById(conn.to);
-                      const color = getStrengthColor(conn.strength);
-                      return (
-                        <View key={`${conn.from}-${conn.to}`} style={{ marginBottom: 16 }}>
-                          <Text style={{ fontSize: 26, color: '#D1D5DB' }}>
-                            {idx + 1}. {fromCard?.name || conn.from} ⇄ {toCard?.name || conn.to}
-                          </Text>
-                          <Text style={{ fontSize: 24, color, marginLeft: 16 }}>
-                            强度 {Math.round(conn.strength * 100)}% | 确定{conn.statusCounts.certain} 可疑{conn.statusCounts.suspicious} 没看懂{conn.statusCounts.confused}
-                          </Text>
+                    {replayReport.summary.trueClueHighlights.length > 0 && (
+                      <View className={styles.replayCard}>
+                        <Text className={styles.replayCardTitle}>🔍 真线索识别分析</Text>
+                        <View className={styles.replayBulletList}>
+                          {replayReport.summary.trueClueHighlights.map((h, i) => (
+                            <Text key={i} className={styles.replayBulletItem}>{h}</Text>
+                          ))}
                         </View>
-                      );
-                    })}
-                  </View>
-                )}
+                      </View>
+                    )}
 
-                {replayReport.confusionAggregates.length > 0 && (
-                  <View className={styles.replayCard}>
-                    <Text className={styles.replayCardTitle}>❓ 困惑焦点</Text>
-                    <View className={styles.replayBulletList}>
-                      {replayReport.summary.confusionFocus.map((c, i) => (
-                        <Text key={i} className={styles.replayBulletItem}>{c}</Text>
+                    {replayReport.summary.misleadingAlerts.length > 0 && (
+                      <View className={styles.replayCard}>
+                        <Text className={styles.replayCardTitle}>🎭 误导线索预警</Text>
+                        <View className={styles.replayBulletList}>
+                          {replayReport.summary.misleadingAlerts.map((a, i) => (
+                            <Text key={i} className={styles.replayBulletItem}>{a}</Text>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {replayReport.topConnections.length > 0 && (
+                      <View className={styles.replayCard}>
+                        <Text className={styles.replayCardTitle}>🔥 连接热区 TOP5</Text>
+                        {replayReport.topConnections.map((conn, idx) => {
+                          const fromCard = getClueCardById(conn.from);
+                          const toCard = getClueCardById(conn.to);
+                          const color = getStrengthColor(conn.strength);
+                          return (
+                            <View key={`${conn.from}-${conn.to}`} style={{ marginBottom: 16 }}>
+                              <Text style={{ fontSize: 26, color: '#D1D5DB' }}>
+                                {idx + 1}. {fromCard?.name || conn.from} ⇄ {toCard?.name || conn.to}
+                              </Text>
+                              <Text style={{ fontSize: 24, color, marginLeft: 16 }}>
+                                强度 {Math.round(conn.strength * 100)}% | 确定{conn.statusCounts.certain} 可疑{conn.statusCounts.suspicious} 没看懂{conn.statusCounts.confused}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {replayReport.confusionAggregates.length > 0 && (
+                      <View className={styles.replayCard}>
+                        <Text className={styles.replayCardTitle}>❓ 困惑焦点</Text>
+                        <View className={styles.replayBulletList}>
+                          {replayReport.summary.confusionFocus.map((c, i) => (
+                            <Text key={i} className={styles.replayBulletItem}>{c}</Text>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    <View className={styles.replayCard}>
+                      <Text className={styles.replayCardTitle}>📌 行动建议</Text>
+                      {replayReport.summary.actionItems.map((item, i) => (
+                        <View key={i} className={styles.replayActionItem}>
+                          <Text className={styles.replayActionNum}>{i + 1}.</Text>
+                          <Text>{item}</Text>
+                        </View>
                       ))}
                     </View>
                   </View>
                 )}
+              </View>
+            )}
 
-                <View className={styles.replayCard}>
-                  <Text className={styles.replayCardTitle}>📌 行动建议</Text>
-                  {replayReport.summary.actionItems.map((item, i) => (
-                    <View key={i} className={styles.replayActionItem}>
-                      <Text className={styles.replayActionNum}>{i + 1}.</Text>
-                      <Text>{item}</Text>
-                    </View>
-                  ))}
+            {replaySubTab === 'trend' && (
+              <View>
+                <View className={styles.trendSelectSection}>
+                  <Text className={styles.levelFilterLabel}>选择关卡查看版本趋势</Text>
+                  <View className={styles.levelFilterChips}>
+                    {allLevels.map(level => (
+                      <View
+                        key={level.id}
+                        className={classnames(styles.levelFilterChip, trendLevelId === level.id && styles.active)}
+                        onClick={() => setTrendLevelId(level.id)}
+                      >
+                        <Text className={classnames(styles.levelFilterChipText, trendLevelId === level.id && styles.active)}>
+                          {level.name}
+                        </Text>
+                        <Text className={styles.levelFilterChipCount}>({level.sessionCount}v)</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
+
+                {!versionTrend || versionTrend.sessions.length === 0 ? (
+                  <View className={styles.emptyTip}>
+                    <Text className={styles.emptyTipText}>该关卡暂无足够测试场次展示趋势</Text>
+                  </View>
+                ) : (
+                  <View>
+                    <View className={styles.trendOverallCard}>
+                      <Text className={styles.trendOverallTitle}>
+                        {versionTrend.levelName} · 整体改版效果
+                      </Text>
+                      <View className={styles.trendOverallRow}>
+                        <Text className={styles.trendOverallLabel}>真线索识别率变化</Text>
+                        <Text className={classnames(styles.trendOverallValue, {
+                          [styles.good]: versionTrend.overallChange.trueRate > 0,
+                          [styles.bad]: versionTrend.overallChange.trueRate < 0
+                        })} style={{
+                          color: versionTrend.overallChange.trueRate > 0 ? '#10B981' : versionTrend.overallChange.trueRate < 0 ? '#DC2626' : '#9CA3AF'
+                        }}>
+                          {versionTrend.overallChange.trueRate === 0 ? '-' : `${versionTrend.overallChange.trueRate > 0 ? '+' : ''}${versionTrend.overallChange.trueRate}%`}
+                        </Text>
+                      </View>
+                      <View className={styles.trendOverallRow}>
+                        <Text className={styles.trendOverallLabel}>误导关联率变化</Text>
+                        <Text className={styles.trendOverallValue} style={{
+                          color: versionTrend.overallChange.misleadingRate < 0 ? '#10B981' : versionTrend.overallChange.misleadingRate > 0 ? '#DC2626' : '#9CA3AF'
+                        }}>
+                          {versionTrend.overallChange.misleadingRate === 0 ? '-' : `${versionTrend.overallChange.misleadingRate > 0 ? '+' : ''}${versionTrend.overallChange.misleadingRate}%`}
+                        </Text>
+                      </View>
+                      <View className={styles.trendOverallRow}>
+                        <Text className={styles.trendOverallLabel}>困惑数量变化</Text>
+                        <Text className={styles.trendOverallValue} style={{
+                          color: versionTrend.overallChange.confusion < 0 ? '#10B981' : versionTrend.overallChange.confusion > 0 ? '#DC2626' : '#9CA3AF'
+                        }}>
+                          {versionTrend.overallChange.confusion === 0 ? '-' : `${versionTrend.overallChange.confusion > 0 ? '+' : ''}${versionTrend.overallChange.confusion}`}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View className={styles.trendTimeline}>
+                      {versionTrend.sessions.map((point, idx) => {
+                        const prevPoint = idx > 0 ? versionTrend.sessions[idx - 1] : null;
+                        const dTrue = prevPoint ? Math.round((point.avgTrueRate - prevPoint.avgTrueRate) * 100) : 0;
+                        const dMisleading = prevPoint ? Math.round((point.avgMisleadingRate - prevPoint.avgMisleadingRate) * 100) : 0;
+                        const dConfusion = prevPoint ? point.confusionTotal - prevPoint.confusionTotal : 0;
+                        return (
+                          <View key={point.sessionId} className={styles.trendVersionItem}>
+                            <View className={styles.trendVersionHeader}>
+                              <Text className={styles.trendVersionBadge}>v{point.version}</Text>
+                              <Text className={styles.trendVersionName}>{point.sessionName}</Text>
+                              <Text className={styles.trendVersionTime}>
+                                {dayjs(point.createdAt).format('MM-DD HH:mm')}
+                              </Text>
+                            </View>
+                            {point.batch && (
+                              <Text style={{ fontSize: 22, color: '#C026D3', marginBottom: 8 }}>
+                                批次：{point.batch}
+                              </Text>
+                            )}
+                            <View className={styles.trendMetricsGrid}>
+                              <View className={styles.trendMetric}>
+                                <Text className={styles.trendMetricLabel}>真线索识别</Text>
+                                <Text className={classnames(styles.trendMetricValue)}>
+                                  {Math.round(point.avgTrueRate * 100)}%
+                                </Text>
+                                {prevPoint && renderDeltaTag(dTrue, true)}
+                              </View>
+                              <View className={styles.trendMetric}>
+                                <Text className={styles.trendMetricLabel}>误导关联</Text>
+                                <Text className={styles.trendMetricValue}>
+                                  {Math.round(point.avgMisleadingRate * 100)}%
+                                </Text>
+                                {prevPoint && renderDeltaTag(dMisleading, false)}
+                              </View>
+                              <View className={styles.trendMetric}>
+                                <Text className={styles.trendMetricLabel}>困惑总数</Text>
+                                <Text className={styles.trendMetricValue}>
+                                  {point.confusionTotal}
+                                </Text>
+                                {prevPoint && renderDeltaTag(dConfusion, false)}
+                              </View>
+                              <View className={styles.trendMetric}>
+                                <Text className={styles.trendMetricLabel}>提交人数</Text>
+                                <Text className={styles.trendMetricValue}>
+                                  {point.submittedPlayers}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
               </View>
             )}
           </View>

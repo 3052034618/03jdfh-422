@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import Taro from '@tarojs/taro';
-import { TestSession, PlayerInfo, PlayerFeedback } from '@/types';
+import { TestSession, PlayerInfo, PlayerFeedback, LevelInfo } from '@/types';
 import { mockSessions } from '@/data/mockSessions';
 import { mockFeedbacks } from '@/data/mockFeedback';
 
@@ -11,12 +11,14 @@ interface AppState {
   sessions: TestSession[];
   feedbacks: PlayerFeedback[];
   initStore: () => void;
-  createSession: (session: Omit<TestSession, 'id' | 'createdAt' | 'createdBy' | 'status'>) => TestSession;
+  createSession: (session: Omit<TestSession, 'id' | 'createdAt' | 'createdBy' | 'status' | 'version'> & { version?: number }) => TestSession;
   addPlayerToSession: (sessionId: string, player: Omit<PlayerInfo, 'id' | 'hasSubmitted'>) => void;
   markPlayerSubmitted: (sessionId: string, playerId: string) => void;
   addFeedback: (feedback: Omit<PlayerFeedback, 'id' | 'submittedAt'>) => void;
   getSessionById: (id: string) => TestSession | undefined;
   getFeedbacksBySessionId: (sessionId: string) => PlayerFeedback[];
+  getAllLevels: () => LevelInfo[];
+  getNextLevelVersion: (levelId: string) => number;
 }
 
 const persistSessions = (sessions: TestSession[]) => {
@@ -77,8 +79,16 @@ const useAppStore = create<AppState>((set, get) => ({
   },
 
   createSession: (data) => {
+    let version = 1;
+    if (data.levelId) {
+      const sameLevel = get().sessions.filter(s => s.levelId === data.levelId);
+      if (sameLevel.length > 0) {
+        version = Math.max(...sameLevel.map(s => s.version)) + 1;
+      }
+    }
     const newSession: TestSession = {
       ...data,
+      version: data.version || version,
       id: `session-${Date.now()}`,
       createdAt: new Date().toISOString(),
       createdBy: '当前测试员',
@@ -137,7 +147,31 @@ const useAppStore = create<AppState>((set, get) => ({
 
   getSessionById: (id) => get().sessions.find(s => s.id === id),
 
-  getFeedbacksBySessionId: (sessionId) => get().feedbacks.filter(f => f.sessionId === sessionId)
+  getFeedbacksBySessionId: (sessionId) => get().feedbacks.filter(f => f.sessionId === sessionId),
+
+  getAllLevels: () => {
+    const levelMap = new Map<string, LevelInfo>();
+    get().sessions.forEach(s => {
+      if (!levelMap.has(s.levelId)) {
+        levelMap.set(s.levelId, {
+          id: s.levelId,
+          name: s.levelName,
+          lastVersion: 0,
+          sessionCount: 0
+        });
+      }
+      const info = levelMap.get(s.levelId)!;
+      info.lastVersion = Math.max(info.lastVersion, s.version);
+      info.sessionCount++;
+    });
+    return Array.from(levelMap.values());
+  },
+
+  getNextLevelVersion: (levelId) => {
+    const sameLevel = get().sessions.filter(s => s.levelId === levelId);
+    if (sameLevel.length === 0) return 1;
+    return Math.max(...sameLevel.map(s => s.version)) + 1;
+  }
 }));
 
 export default useAppStore;

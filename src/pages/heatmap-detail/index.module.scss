@@ -167,3 +167,23 @@
   margin-right: $spacing-xs;
 }
 
+.statusBadgeList {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.statusBadgeMulti {
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.groupCountTip {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  margin-top: 6rpx;
+  display: block;
+}
+

@@ -6,9 +6,10 @@ import styles from './index.module.scss';
 import SessionCard from '@/components/SessionCard';
 import { mockClueCards } from '@/data/mockClueCards';
 import useAppStore from '@/store/useAppStore';
-import { TestSession, PlayerInfo } from '@/types';
+import { TestSession, PlayerInfo, LevelInfo } from '@/types';
 
 type FilterType = 'all' | 'active' | 'completed' | 'draft';
+type LevelMode = 'existing' | 'new';
 
 interface PlayerDraft {
   key: string;
@@ -17,13 +18,16 @@ interface PlayerDraft {
 }
 
 const SessionsPage: React.FC = () => {
-  const { sessions, initStore, createSession, addPlayerToSession } = useAppStore();
+  const { sessions, initStore, createSession, addPlayerToSession, getAllLevels, getNextLevelVersion } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('all');
   const [showModal, setShowModal] = useState(false);
+  const [levelMode, setLevelMode] = useState<LevelMode>('new');
   const [formData, setFormData] = useState({
     name: '',
-    levelName: ''
+    levelName: '',
+    batch: ''
   });
+  const [selectedExistingLevelId, setSelectedExistingLevelId] = useState<string>('');
   const [playerDrafts, setPlayerDrafts] = useState<PlayerDraft[]>([
     { key: `k-${Date.now()}-0`, name: '', code: '' }
   ]);
@@ -32,6 +36,20 @@ const SessionsPage: React.FC = () => {
   useEffect(() => {
     initStore();
   }, [initStore]);
+
+  const allLevels = useMemo(() => getAllLevels(), [getAllLevels, sessions]);
+
+  const nextVersion = useMemo(() => {
+    if (levelMode === 'existing' && selectedExistingLevelId) {
+      return getNextLevelVersion(selectedExistingLevelId);
+    }
+    return 1;
+  }, [levelMode, selectedExistingLevelId, getNextLevelVersion, sessions]);
+
+  const selectedLevel = useMemo(
+    () => allLevels.find(l => l.id === selectedExistingLevelId),
+    [allLevels, selectedExistingLevelId]
+  );
 
   const filteredSessions = useMemo(() => {
     if (filter === 'all') return sessions;
@@ -47,7 +65,9 @@ const SessionsPage: React.FC = () => {
 
   const handleCreate = () => {
     console.log('[SessionsPage] Open create modal');
-    setFormData({ name: '', levelName: '' });
+    setFormData({ name: '', levelName: '', batch: '' });
+    setLevelMode(allLevels.length > 0 ? 'existing' : 'new');
+    setSelectedExistingLevelId('');
     setPlayerDrafts([{ key: `k-${Date.now()}-0`, name: '', code: '' }]);
     setSelectedCardIds(mockClueCards.slice(0, 7).map(c => c.id));
     setShowModal(true);
@@ -79,9 +99,25 @@ const SessionsPage: React.FC = () => {
     }
   };
 
+  const handleSelectExistingLevel = (levelId: string) => {
+    setSelectedExistingLevelId(levelId);
+    const level = allLevels.find(l => l.id === levelId);
+    if (level) {
+      setFormData(prev => ({ ...prev, levelName: level.name }));
+    }
+  };
+
   const handleSubmit = () => {
-    if (!formData.name.trim() || !formData.levelName.trim()) {
-      Taro.showToast({ title: '请填写场次名称和关卡名称', icon: 'none' });
+    if (!formData.name.trim()) {
+      Taro.showToast({ title: '请填写场次名称', icon: 'none' });
+      return;
+    }
+    if (levelMode === 'new' && !formData.levelName.trim()) {
+      Taro.showToast({ title: '请填写关卡名称', icon: 'none' });
+      return;
+    }
+    if (levelMode === 'existing' && !selectedExistingLevelId) {
+      Taro.showToast({ title: '请选择已有或新建关卡', icon: 'none' });
       return;
     }
     const validPlayers = playerDrafts.filter(
@@ -96,10 +132,22 @@ const SessionsPage: React.FC = () => {
       return;
     }
 
+    let levelId: string;
+    let levelName: string;
+    if (levelMode === 'existing' && selectedLevel) {
+      levelId = selectedLevel.id;
+      levelName = selectedLevel.name;
+    } else {
+      levelId = `level-${Date.now()}`;
+      levelName = formData.levelName;
+    }
+
     const newSession: TestSession = createSession({
       name: formData.name,
-      levelName: formData.levelName,
-      levelId: `level-${Date.now()}`,
+      levelName,
+      levelId,
+      version: nextVersion,
+      batch: formData.batch.trim() || undefined,
       players: [],
       clueCardIds: selectedCardIds
     });
@@ -109,7 +157,10 @@ const SessionsPage: React.FC = () => {
     });
 
     console.log('[SessionsPage] Session created:', newSession, 'with players:', validPlayers);
-    Taro.showToast({ title: '创建成功', icon: 'success' });
+    Taro.showToast({
+      title: `创建成功（v${nextVersion}）`,
+      icon: 'success'
+    });
     setShowModal(false);
   };
 
@@ -161,7 +212,7 @@ const SessionsPage: React.FC = () => {
                 <Text className={styles.formLabel}>场次名称</Text>
                 <Input
                   className={styles.formInput}
-                  placeholder="例如：第三章·地下室回声内测"
+                  placeholder="例如：第三章·地下室回声内测 v2"
                   placeholderStyle="color: #6B7280"
                   value={formData.name}
                   onInput={(e) => setFormData({ ...formData, name: e.detail.value })}
@@ -169,13 +220,85 @@ const SessionsPage: React.FC = () => {
               </View>
 
               <View className={styles.formGroup}>
-                <Text className={styles.formLabel}>关卡名称</Text>
+                <Text className={styles.formLabel}>关卡来源</Text>
+                <View className={styles.levelModeTabs}>
+                  <View
+                    className={classnames(styles.levelModeTab, levelMode === 'existing' && styles.active)}
+                    onClick={() => setLevelMode('existing')}
+                  >
+                    <Text className={classnames(styles.levelModeTabText, levelMode === 'existing' && styles.active)}>
+                      已有关卡（新版本）
+                    </Text>
+                  </View>
+                  <View
+                    className={classnames(styles.levelModeTab, levelMode === 'new' && styles.active)}
+                    onClick={() => setLevelMode('new')}
+                  >
+                    <Text className={classnames(styles.levelModeTabText, levelMode === 'new' && styles.active)}>
+                      新建关卡
+                    </Text>
+                  </View>
+                </View>
+
+                {levelMode === 'existing' && (
+                  <View>
+                    {allLevels.length === 0 ? (
+                      <Text style={{ fontSize: 26, color: '#6B7280' }}>暂未创建关卡，请切换到"新建关卡"</Text>
+                    ) : (
+                      <View className={styles.existingLevelList}>
+                        {allLevels.map(level => (
+                          <View
+                            key={level.id}
+                            className={classnames(styles.existingLevelItem, selectedExistingLevelId === level.id && styles.active)}
+                            onClick={() => handleSelectExistingLevel(level.id)}
+                          >
+                            <View>
+                              <Text className={styles.existingLevelName}>{level.name}</Text>
+                              <Text className={styles.existingLevelMeta}>
+                                共 {level.sessionCount} 次测试 · 当前最高版本 v{level.lastVersion}
+                              </Text>
+                            </View>
+                            <View className={classnames(styles.existingLevelBadge, selectedExistingLevelId === level.id && styles.active)}>
+                              {selectedExistingLevelId === level.id ? '✓ 已选' : '点击选择'}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {selectedLevel && (
+                      <View className={styles.versionInfo}>
+                        <Text className={styles.versionInfoText}>
+                          ✓ 已选「{selectedLevel.name}」，将创建为 v{nextVersion}（前一版本为 v{selectedLevel.lastVersion}）
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {levelMode === 'new' && (
+                  <View>
+                    <Input
+                      className={styles.formInput}
+                      placeholder="例如：第三章：地下室回声"
+                      placeholderStyle="color: #6B7280"
+                      value={formData.levelName}
+                      onInput={(e) => setFormData({ ...formData, levelName: e.detail.value })}
+                    />
+                    <View className={styles.versionInfo}>
+                      <Text className={styles.versionInfoText}>
+                        ✓ 新关卡将创建为 v1
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                <Text className={styles.formLabel} style={{ marginTop: 16 }}>测试批次（可选）</Text>
                 <Input
-                  className={styles.formInput}
-                  placeholder="例如：第三章：地下室回声"
+                  className={styles.batchInput}
+                  placeholder="例如：初始版本 / 优化版本 / Bug修复版"
                   placeholderStyle="color: #6B7280"
-                  value={formData.levelName}
-                  onInput={(e) => setFormData({ ...formData, levelName: e.detail.value })}
+                  value={formData.batch}
+                  onInput={(e) => setFormData({ ...formData, batch: e.detail.value })}
                 />
               </View>
 

@@ -429,3 +429,174 @@ export const groupSessionsByLevel = (
     });
   return map;
 };
+
+export interface MisleadingCompareItem {
+  cardId: string;
+  cardName: string;
+  countA: number;
+  countB: number;
+  rateA: number;
+  rateB: number;
+  diff: number;
+  trend: 'up' | 'down' | 'same';
+}
+
+export const compareMisleadingStats = (
+  statsA: CardRecognitionStats[],
+  statsB: CardRecognitionStats[]
+): MisleadingCompareItem[] => {
+  const map = new Map<string, MisleadingCompareItem>();
+  const allIds = new Set([...statsA.map(s => s.cardId), ...statsB.map(s => s.cardId)]);
+
+  allIds.forEach(id => {
+    const a = statsA.find(s => s.cardId === id);
+    const b = statsB.find(s => s.cardId === id);
+    const card = getClueCardById(id);
+    const countA = a?.count || 0;
+    const countB = b?.count || 0;
+    const rateA = a?.rate || 0;
+    const rateB = b?.rate || 0;
+    const diff = Math.round((rateB - rateA) * 100);
+    const trend = diff > 5 ? 'up' : diff < -5 ? 'down' : 'same';
+    map.set(id, {
+      cardId: id,
+      cardName: card?.name || id,
+      countA, countB, rateA, rateB, diff, trend
+    });
+  });
+
+  return Array.from(map.values()).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+};
+
+export interface VersionTrendPoint {
+  sessionId: string;
+  sessionName: string;
+  version: number;
+  batch?: string;
+  createdAt: string;
+  avgTrueRate: number;
+  avgMisleadingRate: number;
+  avgConnectionStrength: number;
+  confusionTotal: number;
+  submittedPlayers: number;
+}
+
+export interface VersionTrend {
+  levelId: string;
+  levelName: string;
+  sessions: VersionTrendPoint[];
+  overallChange: {
+    trueRate: number;
+    misleadingRate: number;
+    confusion: number;
+  };
+}
+
+export const generateVersionTrend = (
+  levelId: string,
+  sessions: TestSession[],
+  feedbacks: PlayerFeedback[]
+): VersionTrend => {
+  const levelSessions = sessions
+    .filter(s => s.levelId === levelId && s.status !== 'draft')
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const points: VersionTrendPoint[] = levelSessions.map(session => {
+    const fbs = feedbacks.filter(f => f.sessionId === session.id);
+    const trueStats = calculateTrueClueStats(fbs, session.clueCardIds);
+    const misleadingStats = calculateMisleadingStats(fbs, session.clueCardIds);
+    const heatmap = calculateHeatmap(fbs, session.clueCardIds);
+    const confusionTotal = fbs.reduce((sum, f) => sum + f.confusions.length, 0);
+
+    return {
+      sessionId: session.id,
+      sessionName: session.name,
+      version: session.version,
+      batch: session.batch,
+      createdAt: session.createdAt,
+      avgTrueRate: trueStats.length > 0
+        ? trueStats.reduce((s, x) => s + x.rate, 0) / trueStats.length
+        : 0,
+      avgMisleadingRate: misleadingStats.length > 0
+        ? misleadingStats.reduce((s, x) => s + x.rate, 0) / misleadingStats.length
+        : 0,
+      avgConnectionStrength: heatmap.connections.length > 0
+        ? heatmap.connections.reduce((s, c) => s + c.strength, 0) / heatmap.connections.length
+        : 0,
+      confusionTotal,
+      submittedPlayers: fbs.length
+    };
+  });
+
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  return {
+    levelId,
+    levelName: levelSessions[0]?.levelName || levelId,
+    sessions: points,
+    overallChange: {
+      trueRate: first && last ? Math.round((last.avgTrueRate - first.avgTrueRate) * 100) : 0,
+      misleadingRate: first && last ? Math.round((last.avgMisleadingRate - first.avgMisleadingRate) * 100) : 0,
+      confusion: first && last ? last.confusionTotal - first.confusionTotal : 0
+    }
+  };
+};
+
+export interface MergedConnectionPlayerDetail {
+  playerName: string;
+  playerId: string;
+  statuses: ('suspicious' | 'certain' | 'confused')[];
+  relatedConfusions: { cardId: string; cardName: string; content: string }[];
+  groupCount: number;
+}
+
+export const getMergedConnectionPlayerDetails = (
+  feedbacks: PlayerFeedback[],
+  cardIdA: string,
+  cardIdB: string
+): MergedConnectionPlayerDetail[] => {
+  const map = new Map<string, MergedConnectionPlayerDetail>();
+
+  feedbacks.forEach(fb => {
+    fb.groups.forEach(g => {
+      if (g.cardIds.includes(cardIdA) && g.cardIds.includes(cardIdB)) {
+        if (!map.has(fb.playerId)) {
+          map.set(fb.playerId, {
+            playerName: fb.playerName,
+            playerId: fb.playerId,
+            statuses: [],
+            relatedConfusions: [],
+            groupCount: 0
+          });
+        }
+        const entry = map.get(fb.playerId)!;
+        if (!entry.statuses.includes(g.status)) {
+          entry.statuses.push(g.status);
+        }
+        entry.groupCount++;
+      }
+    });
+
+    if (map.has(fb.playerId)) {
+      const entry = map.get(fb.playerId)!;
+      fb.confusions
+        .filter(c => c.cardId === cardIdA || c.cardId === cardIdB)
+        .forEach(c => {
+          const card = getClueCardById(c.cardId);
+          const exists = entry.relatedConfusions.find(
+            x => x.cardId === c.cardId && x.content === c.content
+          );
+          if (!exists) {
+            entry.relatedConfusions.push({
+              cardId: c.cardId,
+              cardName: card?.name || c.cardId,
+              content: c.content
+            });
+          }
+        });
+    }
+  });
+
+  return Array.from(map.values());
+};

@@ -687,6 +687,248 @@
   color: $color-primary-light;
 }
 
+.misleadingCompareRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm;
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.misleadingCompareName {
+  flex: 1;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.misleadingCompareBadge {
+  font-size: 20rpx;
+  color: $color-warning;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2rpx 8rpx;
+  border-radius: $radius-xs;
+  margin-left: $spacing-xs;
+}
+
+.misleadingCompareValues {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.misleadingCompareValue {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  min-width: 60rpx;
+  text-align: center;
+}
+
+.misleadingCompareArrow {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.misleadingCompareDiff {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  min-width: 56rpx;
+  text-align: center;
+  padding: 4rpx 0;
+  border-radius: $radius-xs;
+
+  &.up {
+    color: $color-error;
+    background: rgba(220, 38, 38, 0.15);
+  }
+  &.down {
+    color: $color-success;
+    background: rgba(16, 185, 129, 0.15);
+  }
+  &.same {
+    color: $color-text-tertiary;
+    background: rgba(107, 114, 128, 0.2);
+  }
+}
+
+.replaySubTabs {
+  display: flex;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 4rpx;
+  margin-bottom: $spacing-md;
+}
+
+.replaySubTab {
+  flex: 1;
+  padding: $spacing-sm;
+  text-align: center;
+  border-radius: $radius-sm;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-primary;
+  }
+}
+
+.replaySubTabText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.trendSelectSection {
+  margin-bottom: $spacing-md;
+}
+
+.trendTimeline {
+  position: relative;
+  padding-left: $spacing-lg;
+  margin-top: $spacing-md;
+}
+
+.trendTimeline::before {
+  content: '';
+  position: absolute;
+  left: 10rpx;
+  top: 0;
+  bottom: 0;
+  width: 4rpx;
+  background: linear-gradient(180deg, $color-primary 0%, rgba(124, 58, 237, 0.3) 100%);
+}
+
+.trendVersionItem {
+  position: relative;
+  margin-bottom: $spacing-lg;
+}
+
+.trendVersionItem::before {
+  content: '';
+  position: absolute;
+  left: -34rpx;
+  top: 8rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: $radius-round;
+  background: $color-primary;
+  box-shadow: 0 0 12rpx $color-primary;
+}
+
+.trendVersionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.trendVersionBadge {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+  background: rgba(124, 58, 237, 0.15);
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+}
+
+.trendVersionName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  margin-left: $spacing-sm;
+  flex: 1;
+}
+
+.trendVersionTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.trendMetricsGrid {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+  margin-top: $spacing-sm;
+}
+
+.trendMetric {
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+  flex: 1;
+  min-width: 120rpx;
+  text-align: center;
+}
+
+.trendMetricLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.trendMetricValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+
+  &.good {
+    color: $color-success;
+  }
+  &.bad {
+    color: $color-error;
+  }
+}
+
+.trendMetricDelta {
+  font-size: 20rpx;
+  display: block;
+  margin-top: 2rpx;
+
+  &.upGood { color: $color-success; }
+  &.upBad { color: $color-error; }
+  &.downGood { color: $color-success; }
+  &.downBad { color: $color-error; }
+  &.same { color: $color-text-tertiary; }
+}
+
+.trendOverallCard {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(192, 38, 211, 0.1) 100%);
+  border: 1rpx solid $color-primary;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.trendOverallTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.trendOverallRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-xs 0;
+}
+
+.trendOverallLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.trendOverallValue {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+
 .levelFilterSection {
   background: $color-bg-card;
   border: 1rpx solid $color-border;

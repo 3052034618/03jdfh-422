@@ -36,11 +36,20 @@ export interface TestSession {
   name: string;
   levelName: string;
   levelId: string;
+  version: number;
+  batch?: string;
   createdAt: string;
   createdBy: string;
   status: 'active' | 'completed' | 'draft';
   players: PlayerInfo[];
   clueCardIds: string[];
+}
+
+export interface LevelInfo {
+  id: string;
+  name: string;
+  lastVersion: number;
+  sessionCount: number;
 }
 
 export interface PlayerInfo {

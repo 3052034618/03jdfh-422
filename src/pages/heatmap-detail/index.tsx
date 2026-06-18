@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from '@tarojs/components';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import useAppStore from '@/store/useAppStore';
-import { getClueCardById, getStrengthColor, getStatusText, getConnectionPlayerDetails } from '@/utils/heatmap';
+import { getClueCardById, getStrengthColor, getStatusText, getMergedConnectionPlayerDetails } from '@/utils/heatmap';
 
 const HeatmapDetailPage: React.FC = () => {
   const router = useRouter();
@@ -24,26 +24,24 @@ const HeatmapDetailPage: React.FC = () => {
     [feedbacks, sessionId]
   );
 
-  const { count, total, statusCounts, players } = useMemo(() => {
+  const { count, total, statusCounts } = useMemo(() => {
     let count = 0;
     const statusCounts = { certain: 0, suspicious: 0, confused: 0 };
-    const players: { name: string; status: 'certain' | 'suspicious' | 'confused' }[] = [];
 
     sessionFeedbacks.forEach(fb => {
       fb.groups.forEach(g => {
         if (g.cardIds.includes(fromId) && g.cardIds.includes(toId)) {
           count++;
           statusCounts[g.status]++;
-          players.push({ name: fb.playerName, status: g.status });
         }
       });
     });
 
-    return { count, total: sessionFeedbacks.length, statusCounts, players };
+    return { count, total: sessionFeedbacks.length, statusCounts };
   }, [sessionFeedbacks, fromId, toId]);
 
   const playerDetails = useMemo(
-    () => getConnectionPlayerDetails(sessionFeedbacks, fromId, toId),
+    () => getMergedConnectionPlayerDetails(sessionFeedbacks, fromId, toId),
     [sessionFeedbacks, fromId, toId]
   );
 
@@ -99,39 +97,51 @@ const HeatmapDetailPage: React.FC = () => {
         </View>
       </View>
 
-      <Text className={styles.sectionTitle}>建立此关联的玩家 ({players.length}/{total})</Text>
+      <Text className={styles.sectionTitle}>建立此关联的玩家 ({playerDetails.length}/{total})</Text>
       <ScrollView scrollY>
         <View className={styles.playerList}>
           {playerDetails.length === 0 ? (
             <Text style={{ color: '#6B7280', fontSize: 28, textAlign: 'center' }}>暂无数据</Text>
           ) : (
             playerDetails.map((p, idx) => {
-              const statusBg =
-                p.status === 'certain' ? 'rgba(220, 38, 38, 0.15)' :
-                p.status === 'suspicious' ? 'rgba(245, 158, 11, 0.15)' :
-                'rgba(107, 114, 128, 0.2)';
-              const statusColor =
-                p.status === 'certain' ? '#DC2626' :
-                p.status === 'suspicious' ? '#F59E0B' :
-                '#9CA3AF';
+              const getStatusStyle = (status: 'certain' | 'suspicious' | 'confused') => {
+                const bg =
+                  status === 'certain' ? 'rgba(220, 38, 38, 0.15)' :
+                  status === 'suspicious' ? 'rgba(245, 158, 11, 0.15)' :
+                  'rgba(107, 114, 128, 0.2)';
+                const color =
+                  status === 'certain' ? '#DC2626' :
+                  status === 'suspicious' ? '#F59E0B' :
+                  '#9CA3AF';
+                return { background: bg, color };
+              };
 
               return (
                 <View key={idx} className={styles.playerRow}>
                   <View style={{ flex: 1 }}>
                     <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text className={styles.playerName}>{p.playerName}</Text>
-                      <Text
-                        style={{
-                          fontSize: 24,
-                          padding: '4rpx 14rpx',
-                          borderRadius: 8,
-                          background: statusBg,
-                          color: statusColor
-                        }}
-                      >
-                        {getStatusText(p.status)}
-                      </Text>
+                      <View className={styles.statusBadgeList}>
+                        {p.statuses.map((st, si) => {
+                          const s = getStatusStyle(st);
+                          return (
+                            <Text
+                              key={si}
+                              className={styles.statusBadgeMulti}
+                              style={{ background: s.background, color: s.color }}
+                            >
+                              {getStatusText(st)}
+                            </Text>
+                          );
+                        })}
+                      </View>
                     </View>
+
+                    {p.groupCount > 1 && (
+                      <Text className={styles.groupCountTip}>
+                        该玩家在 {p.groupCount} 个分组中都关联了这组卡片
+                      </Text>
+                    )}
 
                     {p.relatedConfusions.length > 0 && (
                       <View className={styles.playerDetailSection}>
