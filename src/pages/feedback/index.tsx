@@ -7,6 +7,8 @@ import useAppStore from '@/store/useAppStore';
 import { ClueCard as ClueCardType, ClueGroup, ClueStatus, ConfusionEntry } from '@/types';
 import ClueCardComponent from '@/components/ClueCard';
 import { getStatusText } from '@/utils/heatmap';
+import { getClueCardById } from '@/data/mockClueCards';
+import dayjs from 'dayjs';
 
 const FeedbackPage: React.FC = () => {
   const { sessions, initStore, addFeedback } = useAppStore();
@@ -16,6 +18,16 @@ const FeedbackPage: React.FC = () => {
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [groups, setGroups] = useState<ClueGroup[]>([]);
   const [confusions, setConfusions] = useState<ConfusionEntry[]>([]);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState<{
+    sessionName: string;
+    levelName: string;
+    playerName: string;
+    playerCode: string;
+    groups: ClueGroup[];
+    confusions: ConfusionEntry[];
+    submittedAt: number;
+  } | null>(null);
 
   useEffect(() => {
     initStore();
@@ -167,7 +179,7 @@ const FeedbackPage: React.FC = () => {
       Taro.showToast({ title: '请确保每组都有档案卡', icon: 'none' });
       return;
     }
-    if (!activePlayer) return;
+    if (!activePlayer || !activeSession) return;
 
     const validConfusions = confusions.filter(c => c.content.trim() !== '');
 
@@ -186,11 +198,23 @@ const FeedbackPage: React.FC = () => {
       confusions: validConfusions
     });
 
-    Taro.showToast({ title: '提交成功，感谢反馈！', icon: 'success' });
-    setTimeout(() => {
-      handleReset();
-      setSelectedPlayerId('');
-    }, 1500);
+    setReceiptData({
+      sessionName: activeSession.name,
+      levelName: activeSession.levelName,
+      playerName: activePlayer.name,
+      playerCode: activePlayer.code,
+      groups: [...groups],
+      confusions: validConfusions,
+      submittedAt: Date.now()
+    });
+    setShowReceipt(true);
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setReceiptData(null);
+    handleReset();
+    setSelectedPlayerId('');
   };
 
   const getCardById = (id: string): ClueCardType | undefined => sessionClueCards.find(c => c.id === id);
@@ -474,6 +498,114 @@ const FeedbackPage: React.FC = () => {
           <Text className={styles.submitBtnText}>提交反馈</Text>
         </View>
       </View>
+
+      {showReceipt && receiptData && (
+        <View className={styles.receiptModal}>
+          <View className={styles.receiptContent}>
+            <View className={styles.receiptHeader}>
+              <Text className={styles.receiptIcon}>✓</Text>
+              <Text className={styles.receiptTitle}>提交成功</Text>
+              <Text className={styles.receiptSubtitle}>反馈回执 · 请核对以下信息</Text>
+            </View>
+
+            <ScrollView scrollY className={styles.receiptBody}>
+              <View className={styles.receiptSection}>
+                <Text className={styles.receiptSectionTitle}>基本信息</Text>
+                <View className={styles.receiptInfoRow}>
+                  <Text className={styles.receiptInfoLabel}>测试场次</Text>
+                  <Text className={styles.receiptInfoValue}>{receiptData.sessionName}</Text>
+                </View>
+                <View className={styles.receiptInfoRow}>
+                  <Text className={styles.receiptInfoLabel}>关卡名称</Text>
+                  <Text className={styles.receiptInfoValue}>{receiptData.levelName}</Text>
+                </View>
+                <View className={styles.receiptInfoRow}>
+                  <Text className={styles.receiptInfoLabel}>玩家姓名</Text>
+                  <Text className={styles.receiptInfoValue}>{receiptData.playerName}</Text>
+                </View>
+                <View className={styles.receiptInfoRow}>
+                  <Text className={styles.receiptInfoLabel}>玩家编号</Text>
+                  <Text className={styles.receiptInfoValue}>{receiptData.playerCode}</Text>
+                </View>
+              </View>
+
+              <View className={styles.receiptSection}>
+                <Text className={styles.receiptSectionTitle}>关联分组（{receiptData.groups.length} 组）</Text>
+                {receiptData.groups.length === 0 ? (
+                  <View className={styles.receiptEmpty}>
+                    <Text>无分组数据</Text>
+                  </View>
+                ) : (
+                  receiptData.groups.map((group, idx) => {
+                    const statusColor: Record<string, string> = {
+                      suspicious: '#F59E0B',
+                      certain: '#10B981',
+                      confused: '#DC2626'
+                    };
+                    return (
+                      <View key={group.id} className={styles.receiptGroup}>
+                        <View className={styles.receiptGroupHeader}>
+                          <Text className={styles.receiptGroupNum}>第 {idx + 1} 组</Text>
+                          <Text
+                            className={styles.receiptGroupStatus}
+                            style={{
+                              background: `${statusColor[group.status]}20`,
+                              color: statusColor[group.status]
+                            }}
+                          >
+                            {getStatusText(group.status)}
+                          </Text>
+                        </View>
+                        <View className={styles.receiptGroupCards}>
+                          {group.cardIds.map(cardId => {
+                            const card = getClueCardById(cardId);
+                            return (
+                              <Text key={cardId} className={styles.receiptGroupCard}>
+                                {card?.name || cardId}
+                                {card?.isTrueClue === false ? ' ⚠️' : ''}
+                              </Text>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+
+              <View className={styles.receiptSection}>
+                <Text className={styles.receiptSectionTitle}>困惑摘录（{receiptData.confusions.length} 条）</Text>
+                {receiptData.confusions.length === 0 ? (
+                  <View className={styles.receiptEmpty}>
+                    <Text>未填写困惑内容</Text>
+                  </View>
+                ) : (
+                  receiptData.confusions.map((entry, idx) => {
+                    const card = getClueCardById(entry.cardId);
+                    return (
+                      <View key={entry.id} className={styles.receiptConfusion}>
+                        <Text className={styles.receiptConfusionCard}>
+                          📋 {card?.name || entry.cardId}
+                        </Text>
+                        <Text className={styles.receiptConfusionContent}>{entry.content}</Text>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+            </ScrollView>
+
+            <View className={styles.receiptFooter}>
+              <View className={styles.receiptConfirmBtn} onClick={handleCloseReceipt}>
+                <Text className={styles.receiptConfirmText}>确认无误</Text>
+              </View>
+              <Text className={styles.receiptTime}>
+                提交时间：{dayjs(receiptData.submittedAt).format('YYYY-MM-DD HH:mm:ss')}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };

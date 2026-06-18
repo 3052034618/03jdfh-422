@@ -195,3 +195,155 @@
   font-weight: $font-weight-semibold;
   color: $color-text-white;
 }
+
+.playerItem.clickable {
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    border-color: $color-primary;
+  }
+}
+
+.playerDetailModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+}
+
+.playerDetailContent {
+  width: 100%;
+  max-height: 85vh;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.playerDetailHeader {
+  padding: $spacing-lg;
+  border-bottom: 1rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.playerDetailTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.playerDetailClose {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+}
+
+.playerDetailBody {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.playerDetailSection {
+  margin-bottom: $spacing-lg;
+}
+
+.playerDetailSectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.playerDetailInfoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-border;
+}
+
+.playerDetailInfoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.playerDetailInfoValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.groupItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.groupCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.groupCardTag {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.confusionItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.confusionCard {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.confusionContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.emptyDetailTip {
+  text-align: center;
+  padding: $spacing-xl * 2;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+

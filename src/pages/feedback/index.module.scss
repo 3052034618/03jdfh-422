@@ -485,3 +485,194 @@
   flex-wrap: wrap;
   gap: 8rpx;
 }
+
+.receiptModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+}
+
+.receiptContent {
+  width: 100%;
+  max-height: 90vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2rpx solid $color-primary;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 60rpx rgba(124, 58, 237, 0.3);
+}
+
+.receiptHeader {
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3) 0%, rgba(192, 38, 211, 0.3) 100%);
+  border-bottom: 2rpx solid $color-primary;
+  text-align: center;
+}
+
+.receiptIcon {
+  font-size: 64rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.receiptTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.receiptSubtitle {
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+  display: block;
+}
+
+.receiptBody {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.receiptSection {
+  margin-bottom: $spacing-lg;
+}
+
+.receiptSectionTitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-sm;
+  text-transform: uppercase;
+  letter-spacing: 2rpx;
+}
+
+.receiptInfoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx dashed $color-border;
+}
+
+.receiptInfoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.receiptInfoValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  text-align: right;
+}
+
+.receiptGroup {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1rpx solid rgba(124, 58, 237, 0.3);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.receiptGroupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.receiptGroupNum {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+}
+
+.receiptGroupStatus {
+  font-size: $font-size-xs;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.receiptGroupCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.receiptGroupCard {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.receiptConfusion {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4rpx solid $color-warning;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.receiptConfusionCard {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.receiptConfusionContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.receiptEmpty {
+  text-align: center;
+  padding: $spacing-lg;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.receiptFooter {
+  padding: $spacing-lg;
+  border-top: 1rpx solid $color-border;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.receiptConfirmBtn {
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active { opacity: 0.9; }
+}
+
+.receiptConfirmText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.receiptTime {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-sm;
+  display: block;
+}
+

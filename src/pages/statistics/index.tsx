@@ -5,14 +5,26 @@ import styles from './index.module.scss';
 import ConnectionHeatmap from '@/components/ConnectionHeatmap';
 import ConfusionItem from '@/components/ConfusionItem';
 import useAppStore from '@/store/useAppStore';
-import { calculateHeatmap, aggregateConfusions } from '@/utils/heatmap';
+import {
+  calculateHeatmap,
+  aggregateConfusions,
+  calculateTrueClueStats,
+  calculateMisleadingStats,
+  getTopConfusionCards,
+  generateComparisonMetrics,
+  getStrengthColor
+} from '@/utils/heatmap';
+import { getClueCardById } from '@/data/mockClueCards';
 
-type TabType = 'heatmap' | 'confusion' | 'insights';
+type TabType = 'heatmap' | 'confusion' | 'insights' | 'compare';
 
 const StatisticsPage: React.FC = () => {
   const { sessions, feedbacks, initStore } = useAppStore();
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('heatmap');
+  const [compareSessionId1, setCompareSessionId1] = useState<string>('');
+  const [compareSessionId2, setCompareSessionId2] = useState<string>('');
+  const [selectingSlot, setSelectingSlot] = useState<'A' | 'B' | null>(null);
 
   useEffect(() => {
     initStore();
@@ -24,6 +36,16 @@ const StatisticsPage: React.FC = () => {
       if (firstAvailable) setSelectedSessionId(firstAvailable.id);
     }
   }, [sessions, selectedSessionId]);
+
+  useEffect(() => {
+    if (sessions.length >= 2 && !compareSessionId1 && !compareSessionId2) {
+      const available = sessions.filter(s => s.status !== 'draft');
+      if (available.length >= 2) {
+        setCompareSessionId1(available[0].id);
+        setCompareSessionId2(available[1].id);
+      }
+    }
+  }, [sessions, compareSessionId1, compareSessionId2]);
 
   const session = useMemo(
     () => sessions.find(s => s.id === selectedSessionId),
@@ -47,27 +69,51 @@ const StatisticsPage: React.FC = () => {
 
   const trueClueStats = useMemo(() => {
     if (!session) return [];
-    const total = sessionFeedbacks.length;
-    if (total === 0) return [];
-
-    const cardConnectCount = new Map<string, number>();
-    sessionFeedbacks.forEach(fb => {
-      fb.groups.forEach(g => {
-        g.cardIds.forEach(id => {
-          if (session.clueCardIds.includes(id)) {
-            cardConnectCount.set(id, (cardConnectCount.get(id) || 0) + 1);
-          }
-        });
-      });
-    });
-
-    return session.clueCardIds
-      .map(id => {
-        const count = cardConnectCount.get(id) || 0;
-        return { cardId: id, rate: total > 0 ? count / total : 0, count, total };
-      })
-      .sort((a, b) => b.rate - a.rate);
+    return calculateTrueClueStats(sessionFeedbacks, session.clueCardIds);
   }, [session, sessionFeedbacks]);
+
+  const misleadingStats = useMemo(() => {
+    if (!session) return [];
+    return calculateMisleadingStats(sessionFeedbacks, session.clueCardIds);
+  }, [session, sessionFeedbacks]);
+
+  const compareSessionA = useMemo(
+    () => sessions.find(s => s.id === compareSessionId1),
+    [sessions, compareSessionId1]
+  );
+
+  const compareSessionB = useMemo(
+    () => sessions.find(s => s.id === compareSessionId2),
+    [sessions, compareSessionId2]
+  );
+
+  const compareFeedbacksA = useMemo(
+    () => feedbacks.filter(f => f.sessionId === compareSessionId1),
+    [feedbacks, compareSessionId1]
+  );
+
+  const compareFeedbacksB = useMemo(
+    () => feedbacks.filter(f => f.sessionId === compareSessionId2),
+    [feedbacks, compareSessionId2]
+  );
+
+  const comparisonMetrics = useMemo(() => {
+    if (!compareSessionA || !compareSessionB) return [];
+    return generateComparisonMetrics(compareSessionA, compareFeedbacksA, compareSessionB, compareFeedbacksB);
+  }, [compareSessionA, compareSessionB, compareFeedbacksA, compareFeedbacksB]);
+
+  const compareTrueStatsA = useMemo(() => {
+    if (!compareSessionA) return [];
+    return calculateTrueClueStats(compareFeedbacksA, compareSessionA.clueCardIds).slice(0, 5);
+  }, [compareSessionA, compareFeedbacksA]);
+
+  const compareTrueStatsB = useMemo(() => {
+    if (!compareSessionB) return [];
+    return calculateTrueClueStats(compareFeedbacksB, compareSessionB.clueCardIds).slice(0, 5);
+  }, [compareSessionB, compareFeedbacksB]);
+
+  const compareConfusionA = useMemo(() => getTopConfusionCards(compareFeedbacksA, 5), [compareFeedbacksA]);
+  const compareConfusionB = useMemo(() => getTopConfusionCards(compareFeedbacksB, 5), [compareFeedbacksB]);
 
   const insights = useMemo(() => {
     if (!session || sessionFeedbacks.length === 0) return [];
@@ -107,6 +153,13 @@ const StatisticsPage: React.FC = () => {
       });
     }
 
+    if (misleadingStats.length > 0 && misleadingStats[0].rate >= 0.5) {
+      insightsList.push({
+        title: '🎭 误导风险',
+        content: `「${misleadingStats[0].cardName}」被 ${Math.round(misleadingStats[0].rate * 100)}% 的玩家错误关联，这条误导线索可能太逼真了。`
+      });
+    }
+
     if (insightsList.length === 0) {
       insightsList.push({
         title: '📊 数据总结',
@@ -115,7 +168,7 @@ const StatisticsPage: React.FC = () => {
     }
 
     return insightsList;
-  }, [session, sessionFeedbacks, heatmapData, confusionData]);
+  }, [session, sessionFeedbacks, heatmapData, confusionData, misleadingStats]);
 
   const availableSessions = sessions.filter(s => s.status !== 'draft');
 
@@ -123,6 +176,30 @@ const StatisticsPage: React.FC = () => {
     if (rate >= 0.7) return styles.highRate;
     if (rate >= 0.4) return styles.midRate;
     return styles.lowRate;
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    if (selectingSlot === 'A') {
+      setCompareSessionId1(sessionId);
+    } else if (selectingSlot === 'B') {
+      setCompareSessionId2(sessionId);
+    }
+    setSelectingSlot(null);
+  };
+
+  const mergeConfusionForCompare = () => {
+    const map = new Map<string, { countA: number; countB: number; name: string }>();
+    compareConfusionA.forEach(item => {
+      map.set(item.cardId, { ...item, countA: item.count, countB: 0 });
+    });
+    compareConfusionB.forEach(item => {
+      if (map.has(item.cardId)) {
+        map.get(item.cardId)!.countB = item.count;
+      } else {
+        map.set(item.cardId, { ...item, countA: 0, countB: item.count });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (b.countA + b.countB) - (a.countA + a.countB));
   };
 
   return (
@@ -189,6 +266,12 @@ const StatisticsPage: React.FC = () => {
         >
           <Text className={classnames(styles.tabText, activeTab === 'insights' && styles.active)}>数据洞察</Text>
         </View>
+        <View
+          className={classnames(styles.tabItem, activeTab === 'compare' && styles.active)}
+          onClick={() => setActiveTab('compare')}
+        >
+          <Text className={classnames(styles.tabText, activeTab === 'compare' && styles.active)}>场次对比</Text>
+        </View>
       </View>
 
       <ScrollView scrollY>
@@ -204,28 +287,47 @@ const StatisticsPage: React.FC = () => {
                 </View>
               ) : (
                 <View className={styles.trueClueList}>
-                  {trueClueStats.slice(0, 6).map(stat => {
-                    const card = heatmapData.cards.find(c => c.id === stat.cardId);
-                    return (
-                      <View key={stat.cardId} className={styles.trueClueItem}>
-                        <View className={styles.trueClueInfo}>
-                          <Text className={styles.trueClueName}>{card?.name || stat.cardId}</Text>
-                          <Text className={styles.trueClueRate}>
-                            {stat.count}/{stat.total} 人关联
-                          </Text>
-                        </View>
-                        <View className={styles.rateBarWrap}>
-                          <View
-                            className={classnames(styles.rateBarFill, getRateClass(stat.rate))}
-                            style={{ width: `${Math.round(stat.rate * 100)}%` }}
-                          />
-                        </View>
+                  {trueClueStats.slice(0, 6).map(stat => (
+                    <View key={stat.cardId} className={styles.trueClueItem}>
+                      <View className={styles.trueClueInfo}>
+                        <Text className={styles.trueClueName}>{stat.cardName}</Text>
+                        <Text className={styles.trueClueRate}>
+                          {stat.count}/{stat.total} 人关联
+                        </Text>
                       </View>
-                    );
-                  })}
+                      <View className={styles.rateBarWrap}>
+                        <View
+                          className={classnames(styles.rateBarFill, getRateClass(stat.rate))}
+                          style={{ width: `${Math.round(stat.rate * 100)}%` }}
+                        />
+                      </View>
+                    </View>
+                  ))}
                 </View>
               )}
             </View>
+
+            {misleadingStats.length > 0 && (
+              <View>
+                <Text className={styles.sectionTitle}>误导线索排行</Text>
+                <View className={styles.misleadingSection}>
+                  <View className={styles.misleadingList}>
+                    {misleadingStats.slice(0, 5).map((stat, idx) => (
+                      <View key={stat.cardId} className={styles.misleadingItem}>
+                        <View className={styles.misleadingInfo}>
+                          <Text className={styles.misleadingName}>{stat.cardName}</Text>
+                          <Text className={styles.misleadingBadge}>误导线索</Text>
+                          <Text className={styles.misleadingRate}>
+                            {stat.count}/{stat.total} 人错误关联
+                          </Text>
+                        </View>
+                        <View className={styles.misleadingRank}>{idx + 1}</View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -253,7 +355,222 @@ const StatisticsPage: React.FC = () => {
             ))}
           </View>
         )}
+
+        {activeTab === 'compare' && (
+          <View>
+            <View className={styles.compareSection}>
+              <View className={styles.compareHeader}>
+                <Text className={styles.compareTitle}>选择对比场次</Text>
+              </View>
+              <View className={styles.compareSelectors}>
+                <View
+                  className={classnames(styles.compareSelector, selectingSlot === 'A' && styles.active)}
+                  onClick={() => setSelectingSlot('A')}
+                >
+                  <Text className={styles.compareSelectorLabel}>场次 A</Text>
+                  <Text className={styles.compareSelectorValue}>
+                    {compareSessionA?.name || '请选择'}
+                  </Text>
+                </View>
+                <View
+                  className={classnames(styles.compareSelector, selectingSlot === 'B' && styles.active)}
+                  onClick={() => setSelectingSlot('B')}
+                >
+                  <Text className={styles.compareSelectorLabel}>场次 B</Text>
+                  <Text className={styles.compareSelectorValue}>
+                    {compareSessionB?.name || '请选择'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {compareSessionA && compareSessionB && (
+              <View>
+                <Text className={styles.sectionTitle}>指标变化总览</Text>
+                <View className={styles.compareMetrics}>
+                  {comparisonMetrics.map((metric, idx) => (
+                    <View key={idx} className={styles.compareMetricRow}>
+                      <Text className={styles.metricName}>{metric.metric}</Text>
+                      <View className={styles.metricValueWrap}>
+                        <View className={styles.metricValueItem}>
+                          <Text className={styles.metricValueText}>{metric.valueA}</Text>
+                        </View>
+                        <View className={styles.metricValueItem}>
+                          <Text className={classnames(styles.metricValueText, styles.highlight)}>{metric.valueB}</Text>
+                        </View>
+                      </View>
+                      <Text className={classnames(styles.metricChange, styles[metric.direction])}>
+                        {metric.direction === 'up' ? `+${metric.change}` : metric.direction === 'down' ? `${metric.change}` : '-'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Text className={styles.sectionTitle}>真线索识别率 TOP5</Text>
+                <View className={styles.compareCharts}>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>{compareSessionA.name}</Text>
+                    {compareTrueStatsA.map(stat => {
+                      const card = getClueCardById(stat.cardId);
+                      return (
+                        <View key={stat.cardId} className={styles.compareChartBar}>
+                          <Text className={styles.compareChartBarName}>{card?.name || stat.cardId}</Text>
+                          <View className={styles.compareChartBarWrap}>
+                            <View
+                              className={styles.compareChartBarFill}
+                              style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#7C3AED' }}
+                            />
+                          </View>
+                          <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>{compareSessionB.name}</Text>
+                    {compareTrueStatsB.map(stat => {
+                      const card = getClueCardById(stat.cardId);
+                      return (
+                        <View key={stat.cardId} className={styles.compareChartBar}>
+                          <Text className={styles.compareChartBarName}>{card?.name || stat.cardId}</Text>
+                          <View className={styles.compareChartBarWrap}>
+                            <View
+                              className={styles.compareChartBarFill}
+                              style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#C026D3' }}
+                            />
+                          </View>
+                          <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <Text className={styles.sectionTitle}>困惑高频卡片</Text>
+                <View className={styles.compareCharts}>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>困惑次数对比</Text>
+                    {mergeConfusionForCompare().map(item => {
+                      const isBetter = item.countB < item.countA;
+                      const isWorse = item.countB > item.countA;
+                      return (
+                        <View key={item.cardId} className={styles.confusionCompareRow}>
+                          <View className={styles.confusionCompareCard}>
+                            <Text className={styles.confusionCompareName}>{item.name}</Text>
+                          </View>
+                          <Text className={styles.confusionCompareValue}>{item.countA} →</Text>
+                          <Text className={classnames(
+                            styles.confusionCompareValue,
+                            isBetter && styles.good,
+                            isWorse && styles.bad
+                          )}>
+                            {item.countB}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <Text className={styles.sectionTitle}>连接热区变化</Text>
+                <View className={styles.compareCharts}>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>{compareSessionA.name}</Text>
+                    <Text className={styles.compareChartSubLabel}>
+                      共 {calculateHeatmap(compareFeedbacksA, compareSessionA.clueCardIds).connections.length} 组关联
+                    </Text>
+                    {calculateHeatmap(compareFeedbacksA, compareSessionA.clueCardIds)
+                      .connections
+                      .sort((a, b) => b.strength - a.strength)
+                      .slice(0, 5)
+                      .map(conn => {
+                        const cardFrom = getClueCardById(conn.from);
+                        const cardTo = getClueCardById(conn.to);
+                        return (
+                          <View key={`${conn.from}-${conn.to}`} className={styles.compareChartBar}>
+                            <Text className={styles.compareChartBarName}>
+                              {cardFrom?.name?.slice(0, 2)}-{cardTo?.name?.slice(0, 2)}
+                            </Text>
+                            <View className={styles.compareChartBarWrap}>
+                              <View
+                                className={styles.compareChartBarFill}
+                                style={{
+                                  width: `${Math.round(conn.strength * 100)}%`,
+                                  backgroundColor: getStrengthColor(conn.strength)
+                                }}
+                              />
+                            </View>
+                            <Text className={styles.compareChartBarValue}>{Math.round(conn.strength * 100)}%</Text>
+                          </View>
+                        );
+                      })}
+                  </View>
+                  <View className={styles.compareChartColumn}>
+                    <Text className={styles.compareChartLabel}>{compareSessionB.name}</Text>
+                    <Text className={styles.compareChartSubLabel}>
+                      共 {calculateHeatmap(compareFeedbacksB, compareSessionB.clueCardIds).connections.length} 组关联
+                    </Text>
+                    {calculateHeatmap(compareFeedbacksB, compareSessionB.clueCardIds)
+                      .connections
+                      .sort((a, b) => b.strength - a.strength)
+                      .slice(0, 5)
+                      .map(conn => {
+                        const cardFrom = getClueCardById(conn.from);
+                        const cardTo = getClueCardById(conn.to);
+                        return (
+                          <View key={`${conn.from}-${conn.to}`} className={styles.compareChartBar}>
+                            <Text className={styles.compareChartBarName}>
+                              {cardFrom?.name?.slice(0, 2)}-{cardTo?.name?.slice(0, 2)}
+                            </Text>
+                            <View className={styles.compareChartBarWrap}>
+                              <View
+                                className={styles.compareChartBarFill}
+                                style={{
+                                  width: `${Math.round(conn.strength * 100)}%`,
+                                  backgroundColor: getStrengthColor(conn.strength)
+                                }}
+                              />
+                            </View>
+                            <Text className={styles.compareChartBarValue}>{Math.round(conn.strength * 100)}%</Text>
+                          </View>
+                        );
+                      })}
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {selectingSlot && (
+        <View className={styles.sessionSelectModal} onClick={() => setSelectingSlot(null)}>
+          <View className={styles.sessionSelectContent} onClick={e => e.stopPropagation()}>
+            <Text className={styles.sessionSelectTitle}>选择场次 {selectingSlot}</Text>
+            <ScrollView scrollY className={styles.sessionSelectList}>
+              {availableSessions.map(s => (
+                <View
+                  key={s.id}
+                  className={classnames(
+                    styles.sessionSelectItem,
+                    (selectingSlot === 'A' && s.id === compareSessionId1) ||
+                    (selectingSlot === 'B' && s.id === compareSessionId2)
+                      ? styles.active
+                      : ''
+                  )}
+                  onClick={() => handleSelectSession(s.id)}
+                >
+                  <Text className={styles.sessionSelectItemName}>{s.name}</Text>
+                  <Text className={styles.sessionSelectItemLevel}>{s.levelName}</Text>
+                </View>
+              ))}
+            </ScrollView>
+            <View className={styles.cancelSelectBtn} onClick={() => setSelectingSlot(null)}>
+              <Text className={styles.cancelSelectText}>取消</Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
