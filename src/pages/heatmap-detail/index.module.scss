@@ -136,3 +136,34 @@
   font-weight: $font-weight-medium;
   color: $color-text-primary;
 }
+
+.playerDetailSection {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-border;
+}
+
+.playerConfusionLabel {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.playerConfusionEntry {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+  background: rgba(245, 158, 11, 0.06);
+  border-radius: $radius-xs;
+  padding: $spacing-xs;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.playerConfusionCard {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  margin-right: $spacing-xs;
+}
+

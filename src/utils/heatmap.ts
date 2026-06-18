@@ -267,3 +267,165 @@ export const generateComparisonMetrics = (
     }
   ];
 };
+
+export interface ReplayReport {
+  sessionName: string;
+  levelName: string;
+  totalPlayers: number;
+  submittedPlayers: number;
+  trueClueStats: CardRecognitionStats[];
+  misleadingStats: CardRecognitionStats[];
+  topConnections: ConnectionData[];
+  confusionAggregates: ConfusionAggregate[];
+  summary: {
+    overallAssessment: string;
+    trueClueHighlights: string[];
+    misleadingAlerts: string[];
+    confusionFocus: string[];
+    actionItems: string[];
+  };
+}
+
+export const generateReplayReport = (
+  session: TestSession,
+  feedbacks: PlayerFeedback[]
+): ReplayReport => {
+  const trueClueStats = calculateTrueClueStats(feedbacks, session.clueCardIds);
+  const misleadingStats = calculateMisleadingStats(feedbacks, session.clueCardIds);
+  const heatmap = calculateHeatmap(feedbacks, session.clueCardIds);
+  const confusionAggregates = aggregateConfusions(feedbacks);
+  const topConnections = [...heatmap.connections]
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 5);
+
+  const submittedPlayers = feedbacks.length;
+  const totalPlayers = session.players.length;
+  const avgTrueRate = trueClueStats.length > 0
+    ? trueClueStats.reduce((sum, s) => sum + s.rate, 0) / trueClueStats.length
+    : 0;
+
+  let overallAssessment = '';
+  if (avgTrueRate >= 0.7) {
+    overallAssessment = `本关卡真线索识别率较高（${Math.round(avgTrueRate * 100)}%），玩家整体理解方向正确，线索引导设计有效。`;
+  } else if (avgTrueRate >= 0.4) {
+    overallAssessment = `本关卡真线索识别率中等（${Math.round(avgTrueRate * 100)}%），部分玩家能识别核心线索，但仍有较大改进空间。`;
+  } else if (avgTrueRate > 0) {
+    overallAssessment = `本关卡真线索识别率偏低（${Math.round(avgTrueRate * 100)}%），多数玩家未能准确识别关键线索，建议重点调整。`;
+  } else {
+    overallAssessment = `数据不足，无法评估。`;
+  }
+
+  const trueClueHighlights: string[] = [];
+  trueClueStats.filter(s => s.rate >= 0.6).forEach(s => {
+    trueClueHighlights.push(`「${s.cardName}」识别率 ${Math.round(s.rate * 100)}%，玩家理解度高，设计有效。`);
+  });
+  trueClueStats.filter(s => s.rate < 0.3).forEach(s => {
+    trueClueHighlights.push(`「${s.cardName}」识别率仅 ${Math.round(s.rate * 100)}%，多数玩家未注意到此线索，需加强叙事铺垫。`);
+  });
+
+  const misleadingAlerts: string[] = [];
+  misleadingStats.forEach(s => {
+    if (s.rate >= 0.5) {
+      misleadingAlerts.push(`⚠️「${s.cardName}」错误关联率高达 ${Math.round(s.rate * 100)}%，误导效果过强，建议削弱线索指向性。`);
+    } else if (s.rate >= 0.2) {
+      misleadingAlerts.push(`「${s.cardName}」被 ${Math.round(s.rate * 100)}% 玩家错误关联，可考虑微调。`);
+    }
+  });
+
+  const confusionFocus: string[] = [];
+  confusionAggregates.slice(0, 3).forEach(agg => {
+    const sampleTexts = agg.entries.slice(0, 2).map(e => e.content).join('；');
+    confusionFocus.push(`「${agg.cardName}」收到 ${agg.count} 条困惑（如："${sampleTexts}"）。`);
+  });
+
+  const actionItems: string[] = [];
+  if (trueClueStats.filter(s => s.rate < 0.3).length > 0) {
+    actionItems.push('梳理低识别率真线索的叙事位置，考虑增加前置线索或视觉引导。');
+  }
+  if (misleadingStats.some(s => s.rate >= 0.5)) {
+    actionItems.push('对高关联率的误导线索进行削弱，减少玩家走弯路的挫败感。');
+  }
+  if (confusionAggregates.length > 0 && confusionAggregates[0].count >= 3) {
+    actionItems.push(`优先讨论「${confusionAggregates[0].cardName}」的困惑反馈，考虑是否需要增加引导说明。`);
+  }
+  const strongConns = heatmap.connections.filter(c => c.strength >= 0.7);
+  if (strongConns.length > 0) {
+    actionItems.push('强共识连接可作为正确路线的锚点，保持当前设计。');
+  }
+  if (actionItems.length === 0) {
+    actionItems.push('当前数据无突出问题，保持现有线索设计继续观察。');
+  }
+
+  return {
+    sessionName: session.name,
+    levelName: session.levelName,
+    totalPlayers,
+    submittedPlayers,
+    trueClueStats,
+    misleadingStats,
+    topConnections,
+    confusionAggregates,
+    summary: {
+      overallAssessment,
+      trueClueHighlights,
+      misleadingAlerts,
+      confusionFocus,
+      actionItems
+    }
+  };
+};
+
+export interface ConnectionPlayerDetail {
+  playerName: string;
+  playerId: string;
+  status: 'suspicious' | 'certain' | 'confused';
+  relatedConfusions: { cardId: string; cardName: string; content: string }[];
+}
+
+export const getConnectionPlayerDetails = (
+  feedbacks: PlayerFeedback[],
+  cardIdA: string,
+  cardIdB: string
+): ConnectionPlayerDetail[] => {
+  const details: ConnectionPlayerDetail[] = [];
+
+  feedbacks.forEach(fb => {
+    fb.groups.forEach(g => {
+      if (g.cardIds.includes(cardIdA) && g.cardIds.includes(cardIdB)) {
+        const relatedConfusions = fb.confusions
+          .filter(c => c.cardId === cardIdA || c.cardId === cardIdB)
+          .map(c => {
+            const card = getClueCardById(c.cardId);
+            return {
+              cardId: c.cardId,
+              cardName: card?.name || c.cardId,
+              content: c.content
+            };
+          });
+
+        details.push({
+          playerName: fb.playerName,
+          playerId: fb.playerId,
+          status: g.status,
+          relatedConfusions
+        });
+      }
+    });
+  });
+
+  return details;
+};
+
+export const groupSessionsByLevel = (
+  sessions: TestSession[]
+): Map<string, TestSession[]> => {
+  const map = new Map<string, TestSession[]>();
+  sessions
+    .filter(s => s.status !== 'draft')
+    .forEach(s => {
+      const list = map.get(s.levelId) || [];
+      list.push(s);
+      map.set(s.levelId, list);
+    });
+  return map;
+};

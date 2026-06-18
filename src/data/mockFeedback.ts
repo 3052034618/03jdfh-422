@@ -78,6 +78,19 @@ export const mockFeedbacks: PlayerFeedback[] = [
     groups: generateGroups(i + 2),
     confusions: generateConfusions(i + 2),
     submittedAt: `2026-06-10T${10 + i}:30:00Z`
+  })),
+  ...Array.from({ length: 3 }, (_, i) => ({
+    id: `fb-s5-${i}`,
+    sessionId: 'session-005',
+    playerId: `p-30${i + 1}`,
+    playerName: ['复测玩家01', '复测玩家02', '复测玩家03'][i],
+    groups: [
+      { id: 'g1', cardIds: ['card-001', 'card-002', 'card-003', 'card-006'], status: 'certain' },
+      { id: 'g2', cardIds: ['card-005', 'card-009', 'card-010'], status: 'suspicious' },
+      { id: 'g3', cardIds: ['card-007'], status: 'confused', note: 'v2还是不太理解' }
+    ],
+    confusions: generateConfusions(i + 3),
+    submittedAt: `2026-06-17T${17 + i}:00:00Z`
   }))
 ];
 

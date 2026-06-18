@@ -1,9 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, ScrollView } from '@tarojs/components';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import useAppStore from '@/store/useAppStore';
-import { getClueCardById, getStrengthColor, getStatusText } from '@/utils/heatmap';
+import { getClueCardById, getStrengthColor, getStatusText, getConnectionPlayerDetails } from '@/utils/heatmap';
 
 const HeatmapDetailPage: React.FC = () => {
   const router = useRouter();
@@ -19,8 +19,12 @@ const HeatmapDetailPage: React.FC = () => {
   const fromCard = useMemo(() => getClueCardById(fromId), [fromId]);
   const toCard = useMemo(() => getClueCardById(toId), [toId]);
 
+  const sessionFeedbacks = useMemo(
+    () => feedbacks.filter(f => f.sessionId === sessionId),
+    [feedbacks, sessionId]
+  );
+
   const { count, total, statusCounts, players } = useMemo(() => {
-    const sessionFeedbacks = feedbacks.filter(f => f.sessionId === sessionId);
     let count = 0;
     const statusCounts = { certain: 0, suspicious: 0, confused: 0 };
     const players: { name: string; status: 'certain' | 'suspicious' | 'confused' }[] = [];
@@ -36,7 +40,12 @@ const HeatmapDetailPage: React.FC = () => {
     });
 
     return { count, total: sessionFeedbacks.length, statusCounts, players };
-  }, [feedbacks, sessionId, fromId, toId]);
+  }, [sessionFeedbacks, fromId, toId]);
+
+  const playerDetails = useMemo(
+    () => getConnectionPlayerDetails(sessionFeedbacks, fromId, toId),
+    [sessionFeedbacks, fromId, toId]
+  );
 
   const strength = total > 0 ? count / total : 0;
   const percentage = Math.round(strength * 100);
@@ -91,34 +100,61 @@ const HeatmapDetailPage: React.FC = () => {
       </View>
 
       <Text className={styles.sectionTitle}>建立此关联的玩家 ({players.length}/{total})</Text>
-      <View className={styles.playerList}>
-        {players.length === 0 ? (
-          <Text style={{ color: '#6B7280', fontSize: 28, textAlign: 'center' }}>暂无数据</Text>
-        ) : (
-          players.map((p, idx) => (
-            <View key={idx} className={styles.playerRow}>
-              <Text className={styles.playerName}>{p.name}</Text>
-              <Text
-                style={{
-                  fontSize: 24,
-                  padding: '4rpx 14rpx',
-                  borderRadius: 8,
-                  background:
-                    p.status === 'certain' ? 'rgba(220, 38, 38, 0.15)' :
-                    p.status === 'suspicious' ? 'rgba(245, 158, 11, 0.15)' :
-                    'rgba(107, 114, 128, 0.2)',
-                  color:
-                    p.status === 'certain' ? '#DC2626' :
-                    p.status === 'suspicious' ? '#F59E0B' :
-                    '#9CA3AF'
-                }}
-              >
-                {getStatusText(p.status)}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
+      <ScrollView scrollY>
+        <View className={styles.playerList}>
+          {playerDetails.length === 0 ? (
+            <Text style={{ color: '#6B7280', fontSize: 28, textAlign: 'center' }}>暂无数据</Text>
+          ) : (
+            playerDetails.map((p, idx) => {
+              const statusBg =
+                p.status === 'certain' ? 'rgba(220, 38, 38, 0.15)' :
+                p.status === 'suspicious' ? 'rgba(245, 158, 11, 0.15)' :
+                'rgba(107, 114, 128, 0.2)';
+              const statusColor =
+                p.status === 'certain' ? '#DC2626' :
+                p.status === 'suspicious' ? '#F59E0B' :
+                '#9CA3AF';
+
+              return (
+                <View key={idx} className={styles.playerRow}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text className={styles.playerName}>{p.playerName}</Text>
+                      <Text
+                        style={{
+                          fontSize: 24,
+                          padding: '4rpx 14rpx',
+                          borderRadius: 8,
+                          background: statusBg,
+                          color: statusColor
+                        }}
+                      >
+                        {getStatusText(p.status)}
+                      </Text>
+                    </View>
+
+                    {p.relatedConfusions.length > 0 && (
+                      <View className={styles.playerDetailSection}>
+                        <Text className={styles.playerConfusionLabel}>
+                          相关困惑 ({p.relatedConfusions.length})
+                        </Text>
+                        {p.relatedConfusions.map((conf, ci) => (
+                          <View key={ci} className={styles.playerConfusionEntry}>
+                            <Text className={styles.playerConfusionCard}>
+                              📋 {conf.cardName}
+                            </Text>
+                            <Text>{conf.content}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 };

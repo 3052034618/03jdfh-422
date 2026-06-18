@@ -59,6 +59,21 @@ export const mockSessions: TestSession[] = [
     status: 'draft',
     players: [],
     clueCardIds: []
+  },
+  {
+    id: 'session-005',
+    name: '第二章·废弃诊所 v2测试',
+    levelName: '第二章：废弃诊所',
+    levelId: 'level-002',
+    createdAt: '2026-06-17T16:00:00Z',
+    createdBy: '测试员小李',
+    status: 'completed',
+    players: [
+      { id: 'p-301', name: '复测玩家01', code: 'R301', hasSubmitted: true },
+      { id: 'p-302', name: '复测玩家02', code: 'R302', hasSubmitted: true },
+      { id: 'p-303', name: '复测玩家03', code: 'R303', hasSubmitted: true }
+    ],
+    clueCardIds: ['card-001', 'card-002', 'card-003', 'card-005', 'card-006', 'card-009', 'card-010']
   }
 ];
 

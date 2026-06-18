@@ -589,3 +589,159 @@
   color: $color-error;
 }
 
+.replaySection {
+  margin-bottom: $spacing-lg;
+}
+
+.replayCard {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.replayCardTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.replayAssessment {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+  background: rgba(124, 58, 237, 0.08);
+  border-left: 6rpx solid $color-primary;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+  display: block;
+}
+
+.replayBulletList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.replayBulletItem {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+  padding-left: $spacing-md;
+  position: relative;
+  display: block;
+}
+
+.replayBulletItem::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: $color-primary-light;
+  font-weight: bold;
+}
+
+.replayActionItem {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-loose;
+  padding: $spacing-sm;
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.replayActionNum {
+  color: $color-primary-light;
+  font-weight: $font-weight-semibold;
+  margin-right: $spacing-xs;
+}
+
+.replayDataGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.replayDataChip {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.replayDataLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.replayDataValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+}
+
+.levelFilterSection {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.levelFilterLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.levelFilterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.levelFilterChip {
+  padding: $spacing-xs $spacing-md;
+  background: $color-bg-hover;
+  border: 2rpx solid transparent;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: $color-primary;
+  }
+}
+
+.levelFilterChipText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary-light;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.levelFilterChipCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-left: 4rpx;
+}
+
+.autoMatchHint {
+  font-size: $font-size-xs;
+  color: $color-success;
+  margin-top: $spacing-sm;
+  display: block;
+}
+
+

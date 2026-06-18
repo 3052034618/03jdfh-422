@@ -12,11 +12,13 @@ import {
   calculateMisleadingStats,
   getTopConfusionCards,
   generateComparisonMetrics,
-  getStrengthColor
+  getStrengthColor,
+  generateReplayReport,
+  groupSessionsByLevel
 } from '@/utils/heatmap';
 import { getClueCardById } from '@/data/mockClueCards';
 
-type TabType = 'heatmap' | 'confusion' | 'insights' | 'compare';
+type TabType = 'heatmap' | 'confusion' | 'insights' | 'compare' | 'replay';
 
 const StatisticsPage: React.FC = () => {
   const { sessions, feedbacks, initStore } = useAppStore();
@@ -25,6 +27,7 @@ const StatisticsPage: React.FC = () => {
   const [compareSessionId1, setCompareSessionId1] = useState<string>('');
   const [compareSessionId2, setCompareSessionId2] = useState<string>('');
   const [selectingSlot, setSelectingSlot] = useState<'A' | 'B' | null>(null);
+  const [compareLevelFilter, setCompareLevelFilter] = useState<string>('');
 
   useEffect(() => {
     initStore();
@@ -76,6 +79,21 @@ const StatisticsPage: React.FC = () => {
     if (!session) return [];
     return calculateMisleadingStats(sessionFeedbacks, session.clueCardIds);
   }, [session, sessionFeedbacks]);
+
+  const replayReport = useMemo(() => {
+    if (!session) return null;
+    return generateReplayReport(session, sessionFeedbacks);
+  }, [session, sessionFeedbacks]);
+
+  const levelGroups = useMemo(() => {
+    const map = groupSessionsByLevel(sessions);
+    return Array.from(map.entries()).map(([levelId, sList]) => ({
+      levelId,
+      levelName: sList[0]?.levelName || levelId,
+      sessions: sList,
+      count: sList.length
+    })).filter(g => g.count >= 1);
+  }, [sessions]);
 
   const compareSessionA = useMemo(
     () => sessions.find(s => s.id === compareSessionId1),
@@ -187,20 +205,40 @@ const StatisticsPage: React.FC = () => {
     setSelectingSlot(null);
   };
 
+  const handleLevelFilterSelect = (levelId: string) => {
+    if (compareLevelFilter === levelId) {
+      setCompareLevelFilter('');
+      return;
+    }
+    setCompareLevelFilter(levelId);
+    const group = levelGroups.find(g => g.levelId === levelId);
+    if (group && group.sessions.length >= 2) {
+      setCompareSessionId1(group.sessions[0].id);
+      setCompareSessionId2(group.sessions[1].id);
+    }
+  };
+
   const mergeConfusionForCompare = () => {
-    const map = new Map<string, { countA: number; countB: number; name: string }>();
+    const map = new Map<string, { cardId: string; countA: number; countB: number; name: string }>();
     compareConfusionA.forEach(item => {
-      map.set(item.cardId, { ...item, countA: item.count, countB: 0 });
+      const card = getClueCardById(item.cardId);
+      map.set(item.cardId, { cardId: item.cardId, name: card?.name || item.cardName, countA: item.count, countB: 0 });
     });
     compareConfusionB.forEach(item => {
+      const card = getClueCardById(item.cardId);
       if (map.has(item.cardId)) {
         map.get(item.cardId)!.countB = item.count;
       } else {
-        map.set(item.cardId, { ...item, countA: 0, countB: item.count });
+        map.set(item.cardId, { cardId: item.cardId, name: card?.name || item.cardName, countA: 0, countB: item.count });
       }
     });
     return Array.from(map.values()).sort((a, b) => (b.countA + b.countB) - (a.countA + a.countB));
   };
+
+  const filteredSessionsForCompare = useMemo(() => {
+    if (!compareLevelFilter) return availableSessions;
+    return availableSessions.filter(s => s.levelId === compareLevelFilter);
+  }, [availableSessions, compareLevelFilter]);
 
   return (
     <View className={styles.page}>
@@ -271,6 +309,12 @@ const StatisticsPage: React.FC = () => {
           onClick={() => setActiveTab('compare')}
         >
           <Text className={classnames(styles.tabText, activeTab === 'compare' && styles.active)}>场次对比</Text>
+        </View>
+        <View
+          className={classnames(styles.tabItem, activeTab === 'replay' && styles.active)}
+          onClick={() => setActiveTab('replay')}
+        >
+          <Text className={classnames(styles.tabText, activeTab === 'replay' && styles.active)}>复盘报告</Text>
         </View>
       </View>
 
@@ -358,6 +402,42 @@ const StatisticsPage: React.FC = () => {
 
         {activeTab === 'compare' && (
           <View>
+            <View className={styles.levelFilterSection}>
+              <Text className={styles.levelFilterLabel}>按关卡版本筛选（自动匹配同关不同版）</Text>
+              <View className={styles.levelFilterChips}>
+                <View
+                  className={classnames(styles.levelFilterChip, !compareLevelFilter && styles.active)}
+                  onClick={() => setCompareLevelFilter('')}
+                >
+                  <Text className={classnames(styles.levelFilterChipText, !compareLevelFilter && styles.active)}>
+                    全部场次
+                  </Text>
+                </View>
+                {levelGroups.map(g => (
+                  <View
+                    key={g.levelId}
+                    className={classnames(styles.levelFilterChip, compareLevelFilter === g.levelId && styles.active)}
+                    onClick={() => handleLevelFilterSelect(g.levelId)}
+                  >
+                    <Text className={classnames(styles.levelFilterChipText, compareLevelFilter === g.levelId && styles.active)}>
+                      {g.levelName}
+                    </Text>
+                    <Text className={styles.levelFilterChipCount}>({g.count})</Text>
+                  </View>
+                ))}
+              </View>
+              {compareLevelFilter && levelGroups.find(g => g.levelId === compareLevelFilter)?.count === 1 && (
+                <Text style={{ fontSize: 24, color: '#F59E0B', marginTop: 16, display: 'block' }}>
+                  该关卡仅有1个测试场次，无法自动匹配对比
+                </Text>
+              )}
+              {compareLevelFilter && (levelGroups.find(g => g.levelId === compareLevelFilter)?.count || 0) >= 2 && (
+                <Text className={styles.autoMatchHint}>
+                  ✓ 已自动匹配同关卡的前后两个场次
+                </Text>
+              )}
+            </View>
+
             <View className={styles.compareSection}>
               <View className={styles.compareHeader}>
                 <Text className={styles.compareTitle}>选择对比场次</Text>
@@ -410,46 +490,42 @@ const StatisticsPage: React.FC = () => {
                 <View className={styles.compareCharts}>
                   <View className={styles.compareChartColumn}>
                     <Text className={styles.compareChartLabel}>{compareSessionA.name}</Text>
-                    {compareTrueStatsA.map(stat => {
-                      const card = getClueCardById(stat.cardId);
-                      return (
-                        <View key={stat.cardId} className={styles.compareChartBar}>
-                          <Text className={styles.compareChartBarName}>{card?.name || stat.cardId}</Text>
-                          <View className={styles.compareChartBarWrap}>
-                            <View
-                              className={styles.compareChartBarFill}
-                              style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#7C3AED' }}
-                            />
-                          </View>
-                          <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                    {compareTrueStatsA.map(stat => (
+                      <View key={stat.cardId} className={styles.compareChartBar}>
+                        <Text className={styles.compareChartBarName}>{stat.cardName}</Text>
+                        <View className={styles.compareChartBarWrap}>
+                          <View
+                            className={styles.compareChartBarFill}
+                            style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#7C3AED' }}
+                          />
                         </View>
-                      );
-                    })}
+                        <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                      </View>
+                    ))}
                   </View>
                   <View className={styles.compareChartColumn}>
                     <Text className={styles.compareChartLabel}>{compareSessionB.name}</Text>
-                    {compareTrueStatsB.map(stat => {
-                      const card = getClueCardById(stat.cardId);
-                      return (
-                        <View key={stat.cardId} className={styles.compareChartBar}>
-                          <Text className={styles.compareChartBarName}>{card?.name || stat.cardId}</Text>
-                          <View className={styles.compareChartBarWrap}>
-                            <View
-                              className={styles.compareChartBarFill}
-                              style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#C026D3' }}
-                            />
-                          </View>
-                          <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                    {compareTrueStatsB.map(stat => (
+                      <View key={stat.cardId} className={styles.compareChartBar}>
+                        <Text className={styles.compareChartBarName}>{stat.cardName}</Text>
+                        <View className={styles.compareChartBarWrap}>
+                          <View
+                            className={styles.compareChartBarFill}
+                            style={{ width: `${Math.round(stat.rate * 100)}%`, backgroundColor: '#C026D3' }}
+                          />
                         </View>
-                      );
-                    })}
+                        <Text className={styles.compareChartBarValue}>{Math.round(stat.rate * 100)}%</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
 
-                <Text className={styles.sectionTitle}>困惑高频卡片</Text>
+                <Text className={styles.sectionTitle}>困惑高频卡片变化</Text>
                 <View className={styles.compareCharts}>
                   <View className={styles.compareChartColumn}>
-                    <Text className={styles.compareChartLabel}>困惑次数对比</Text>
+                    <Text className={styles.compareChartLabel}>
+                      {compareSessionA.name} → {compareSessionB.name}
+                    </Text>
                     {mergeConfusionForCompare().map(item => {
                       const isBetter = item.countB < item.countA;
                       const isWorse = item.countB > item.countA;
@@ -489,7 +565,7 @@ const StatisticsPage: React.FC = () => {
                         return (
                           <View key={`${conn.from}-${conn.to}`} className={styles.compareChartBar}>
                             <Text className={styles.compareChartBarName}>
-                              {cardFrom?.name?.slice(0, 2)}-{cardTo?.name?.slice(0, 2)}
+                              {cardFrom?.name || conn.from} ⇄ {cardTo?.name || conn.to}
                             </Text>
                             <View className={styles.compareChartBarWrap}>
                               <View
@@ -520,7 +596,7 @@ const StatisticsPage: React.FC = () => {
                         return (
                           <View key={`${conn.from}-${conn.to}`} className={styles.compareChartBar}>
                             <Text className={styles.compareChartBarName}>
-                              {cardFrom?.name?.slice(0, 2)}-{cardTo?.name?.slice(0, 2)}
+                              {cardFrom?.name || conn.from} ⇄ {cardTo?.name || conn.to}
                             </Text>
                             <View className={styles.compareChartBarWrap}>
                               <View
@@ -541,6 +617,108 @@ const StatisticsPage: React.FC = () => {
             )}
           </View>
         )}
+
+        {activeTab === 'replay' && (
+          <View>
+            {!session ? (
+              <View className={styles.emptyTip}>
+                <Text className={styles.emptyTipText}>请先选择测试场次</Text>
+              </View>
+            ) : !replayReport ? (
+              <View className={styles.emptyTip}>
+                <Text className={styles.emptyTipText}>暂无数据</Text>
+              </View>
+            ) : (
+              <View>
+                <View className={styles.replayDataGrid}>
+                  <View className={styles.replayDataChip}>
+                    <Text className={styles.replayDataLabel}>场次</Text>
+                    <Text className={styles.replayDataValue}>{replayReport.sessionName}</Text>
+                  </View>
+                  <View className={styles.replayDataChip}>
+                    <Text className={styles.replayDataLabel}>关卡</Text>
+                    <Text className={styles.replayDataValue}>{replayReport.levelName}</Text>
+                  </View>
+                  <View className={styles.replayDataChip}>
+                    <Text className={styles.replayDataLabel}>反馈</Text>
+                    <Text className={styles.replayDataValue}>{replayReport.submittedPlayers}/{replayReport.totalPlayers}</Text>
+                  </View>
+                </View>
+
+                <View className={styles.replayCard}>
+                  <Text className={styles.replayCardTitle}>📋 整体评估</Text>
+                  <Text className={styles.replayAssessment}>
+                    {replayReport.summary.overallAssessment}
+                  </Text>
+                </View>
+
+                {replayReport.summary.trueClueHighlights.length > 0 && (
+                  <View className={styles.replayCard}>
+                    <Text className={styles.replayCardTitle}>🔍 真线索识别分析</Text>
+                    <View className={styles.replayBulletList}>
+                      {replayReport.summary.trueClueHighlights.map((h, i) => (
+                        <Text key={i} className={styles.replayBulletItem}>{h}</Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {replayReport.summary.misleadingAlerts.length > 0 && (
+                  <View className={styles.replayCard}>
+                    <Text className={styles.replayCardTitle}>🎭 误导线索预警</Text>
+                    <View className={styles.replayBulletList}>
+                      {replayReport.summary.misleadingAlerts.map((a, i) => (
+                        <Text key={i} className={styles.replayBulletItem}>{a}</Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {replayReport.topConnections.length > 0 && (
+                  <View className={styles.replayCard}>
+                    <Text className={styles.replayCardTitle}>🔥 连接热区 TOP5</Text>
+                    {replayReport.topConnections.map((conn, idx) => {
+                      const fromCard = getClueCardById(conn.from);
+                      const toCard = getClueCardById(conn.to);
+                      const color = getStrengthColor(conn.strength);
+                      return (
+                        <View key={`${conn.from}-${conn.to}`} style={{ marginBottom: 16 }}>
+                          <Text style={{ fontSize: 26, color: '#D1D5DB' }}>
+                            {idx + 1}. {fromCard?.name || conn.from} ⇄ {toCard?.name || conn.to}
+                          </Text>
+                          <Text style={{ fontSize: 24, color, marginLeft: 16 }}>
+                            强度 {Math.round(conn.strength * 100)}% | 确定{conn.statusCounts.certain} 可疑{conn.statusCounts.suspicious} 没看懂{conn.statusCounts.confused}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {replayReport.confusionAggregates.length > 0 && (
+                  <View className={styles.replayCard}>
+                    <Text className={styles.replayCardTitle}>❓ 困惑焦点</Text>
+                    <View className={styles.replayBulletList}>
+                      {replayReport.summary.confusionFocus.map((c, i) => (
+                        <Text key={i} className={styles.replayBulletItem}>{c}</Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                <View className={styles.replayCard}>
+                  <Text className={styles.replayCardTitle}>📌 行动建议</Text>
+                  {replayReport.summary.actionItems.map((item, i) => (
+                    <View key={i} className={styles.replayActionItem}>
+                      <Text className={styles.replayActionNum}>{i + 1}.</Text>
+                      <Text>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {selectingSlot && (
@@ -548,7 +726,7 @@ const StatisticsPage: React.FC = () => {
           <View className={styles.sessionSelectContent} onClick={e => e.stopPropagation()}>
             <Text className={styles.sessionSelectTitle}>选择场次 {selectingSlot}</Text>
             <ScrollView scrollY className={styles.sessionSelectList}>
-              {availableSessions.map(s => (
+              {filteredSessionsForCompare.map(s => (
                 <View
                   key={s.id}
                   className={classnames(
