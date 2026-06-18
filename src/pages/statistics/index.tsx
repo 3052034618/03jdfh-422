@@ -1,27 +1,38 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import classnames from 'classnames';
 import styles from './index.module.scss';
 import ConnectionHeatmap from '@/components/ConnectionHeatmap';
 import ConfusionItem from '@/components/ConfusionItem';
-import { mockSessions } from '@/data/mockSessions';
-import { mockFeedbacks } from '@/data/mockFeedback';
+import useAppStore from '@/store/useAppStore';
 import { calculateHeatmap, aggregateConfusions } from '@/utils/heatmap';
 
 type TabType = 'heatmap' | 'confusion' | 'insights';
 
 const StatisticsPage: React.FC = () => {
-  const [selectedSessionId, setSelectedSessionId] = useState('session-001');
+  const { sessions, feedbacks, initStore } = useAppStore();
+  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('heatmap');
 
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
+
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedSessionId) {
+      const firstAvailable = sessions.find(s => s.status !== 'draft');
+      if (firstAvailable) setSelectedSessionId(firstAvailable.id);
+    }
+  }, [sessions, selectedSessionId]);
+
   const session = useMemo(
-    () => mockSessions.find(s => s.id === selectedSessionId),
-    [selectedSessionId]
+    () => sessions.find(s => s.id === selectedSessionId),
+    [sessions, selectedSessionId]
   );
 
   const sessionFeedbacks = useMemo(
-    () => mockFeedbacks.filter(f => f.sessionId === selectedSessionId),
-    [selectedSessionId]
+    () => feedbacks.filter(f => f.sessionId === selectedSessionId),
+    [feedbacks, selectedSessionId]
   );
 
   const heatmapData = useMemo(() => {
@@ -106,7 +117,7 @@ const StatisticsPage: React.FC = () => {
     return insightsList;
   }, [session, sessionFeedbacks, heatmapData, confusionData]);
 
-  const completedSessions = mockSessions.filter(s => s.status !== 'draft');
+  const availableSessions = sessions.filter(s => s.status !== 'draft');
 
   const getRateClass = (rate: number) => {
     if (rate >= 0.7) return styles.highRate;
@@ -124,17 +135,21 @@ const StatisticsPage: React.FC = () => {
       <View className={styles.sessionSelect}>
         <Text className={styles.selectLabel}>选择测试场次</Text>
         <ScrollView scrollX className={styles.sessionOptions}>
-          {completedSessions.map(s => (
-            <View
-              key={s.id}
-              className={classnames(styles.sessionOption, selectedSessionId === s.id && styles.active)}
-              onClick={() => setSelectedSessionId(s.id)}
-            >
-              <Text className={classnames(styles.sessionOptionText, selectedSessionId === s.id && styles.active)}>
-                {s.name}
-              </Text>
-            </View>
-          ))}
+          {availableSessions.length === 0 ? (
+            <Text style={{ color: '#6B7280', fontSize: 26 }}>暂无可用场次</Text>
+          ) : (
+            availableSessions.map(s => (
+              <View
+                key={s.id}
+                className={classnames(styles.sessionOption, selectedSessionId === s.id && styles.active)}
+                onClick={() => setSelectedSessionId(s.id)}
+              >
+                <Text className={classnames(styles.sessionOptionText, selectedSessionId === s.id && styles.active)}>
+                  {s.name}
+                </Text>
+              </View>
+            ))
+          )}
         </ScrollView>
       </View>
 

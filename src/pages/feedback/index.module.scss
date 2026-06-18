@@ -414,3 +414,74 @@
 .selectableCard {
   position: relative;
 }
+
+.contextSection {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.contextRow {
+  margin-bottom: $spacing-md;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.contextLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.contextOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.contextChip {
+  padding: 10rpx 20rpx;
+  background: $color-bg-hover;
+  border: 2rpx solid transparent;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: $color-primary;
+  }
+
+  &.disabled {
+    opacity: 0.4;
+  }
+}
+
+.contextChipText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary-light;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.contextHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.confusionCardsScroll {
+  max-height: 200rpx;
+}
+
+.confusionCardsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}

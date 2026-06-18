@@ -1,21 +1,26 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text } from '@tarojs/components';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
+import useAppStore from '@/store/useAppStore';
 import { getClueCardById, getStrengthColor, getStatusText } from '@/utils/heatmap';
-import { mockFeedbacks } from '@/data/mockFeedback';
 
 const HeatmapDetailPage: React.FC = () => {
   const router = useRouter();
   const sessionId = (router.params.sessionId as string) || 'session-001';
   const fromId = (router.params.from as string) || 'card-001';
   const toId = (router.params.to as string) || 'card-002';
+  const { feedbacks, initStore } = useAppStore();
+
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
 
   const fromCard = useMemo(() => getClueCardById(fromId), [fromId]);
   const toCard = useMemo(() => getClueCardById(toId), [toId]);
 
   const { count, total, statusCounts, players } = useMemo(() => {
-    const sessionFeedbacks = mockFeedbacks.filter(f => f.sessionId === sessionId);
+    const sessionFeedbacks = feedbacks.filter(f => f.sessionId === sessionId);
     let count = 0;
     const statusCounts = { certain: 0, suspicious: 0, confused: 0 };
     const players: { name: string; status: 'certain' | 'suspicious' | 'confused' }[] = [];
@@ -31,7 +36,7 @@ const HeatmapDetailPage: React.FC = () => {
     });
 
     return { count, total: sessionFeedbacks.length, statusCounts, players };
-  }, [sessionId, fromId, toId]);
+  }, [feedbacks, sessionId, fromId, toId]);
 
   const strength = total > 0 ? count / total : 0;
   const percentage = Math.round(strength * 100);

@@ -188,3 +188,126 @@
   color: $color-text-tertiary;
   display: block;
 }
+
+.playersSection {
+  margin-bottom: $spacing-md;
+}
+
+.playersHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.playersLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.playersCount {
+  font-size: $font-size-xs;
+  color: $color-primary-light;
+  font-weight: $font-weight-medium;
+}
+
+.playerRow {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  align-items: center;
+}
+
+.playerInput {
+  flex: 1;
+  height: 72rpx;
+  background: $color-bg-input;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-sm;
+  padding: 0 $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.removePlayerBtn {
+  width: 64rpx;
+  height: 72rpx;
+  background: rgba(220, 38, 38, 0.1);
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.removePlayerText {
+  font-size: $font-size-lg;
+  color: $color-error;
+}
+
+.addPlayerBtn {
+  padding: $spacing-sm;
+  background: rgba(124, 58, 237, 0.1);
+  border: 2rpx dashed $color-primary;
+  border-radius: $radius-md;
+  text-align: center;
+}
+
+.addPlayerText {
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+}
+
+.modalScroll {
+  max-height: 80vh;
+}
+
+.clueCardsSection {
+  margin-bottom: $spacing-md;
+}
+
+.clueCardsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.clueCardsLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.clueCardsCount {
+  font-size: $font-size-xs;
+  color: $color-primary-light;
+}
+
+.clueCardsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.clueCardChip {
+  padding: 8rpx 16rpx;
+  background: $color-bg-hover;
+  border: 2rpx solid transparent;
+  border-radius: $radius-sm;
+  transition: all $transition-base;
+
+  &.active {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: $color-primary;
+  }
+}
+
+.clueCardChipText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary-light;
+    font-weight: $font-weight-medium;
+  }
+}

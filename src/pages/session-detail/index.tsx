@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import classnames from 'classnames';
 import styles from './index.module.scss';
-import { getSessionById } from '@/data/mockSessions';
+import useAppStore from '@/store/useAppStore';
 import dayjs from 'dayjs';
 
 const statusMap = {
@@ -15,7 +15,16 @@ const statusMap = {
 const SessionDetailPage: React.FC = () => {
   const router = useRouter();
   const sessionId = router.params.id || 'session-001';
-  const session = useMemo(() => getSessionById(sessionId as string), [sessionId]);
+  const { sessions, initStore, getSessionById } = useAppStore();
+
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
+
+  const session = useMemo(
+    () => sessions.find(s => s.id === sessionId) || getSessionById(sessionId as string),
+    [sessions, sessionId, getSessionById]
+  );
 
   if (!session) {
     return (
