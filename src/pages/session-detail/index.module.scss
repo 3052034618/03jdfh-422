@@ -1,0 +1,197 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+.header {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  flex: 1;
+  margin-right: $spacing-sm;
+}
+
+.statusBadge {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-xs;
+  flex-shrink: 0;
+
+  &.active {
+    background: rgba(16, 185, 129, 0.15);
+    .statusText { color: $color-success; }
+  }
+  &.completed {
+    background: rgba(59, 130, 246, 0.15);
+    .statusText { color: $color-info; }
+  }
+  &.draft {
+    background: rgba(107, 114, 128, 0.2);
+    .statusText { color: $color-text-secondary; }
+  }
+}
+
+.statusText {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+}
+
+.metaLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.metaValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.progressCard {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.progressLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.progressValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-round;
+}
+
+.playerList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.playerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.playerInfo {
+  flex: 1;
+}
+
+.playerName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+}
+
+.playerCode {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.submitStatus {
+  padding: 6rpx 14rpx;
+  border-radius: $radius-xs;
+
+  &.done {
+    background: rgba(16, 185, 129, 0.15);
+    .statusLabel { color: $color-success; }
+  }
+  &.pending {
+    background: rgba(107, 114, 128, 0.2);
+    .statusLabel { color: $color-text-secondary; }
+  }
+}
+
+.statusLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.actionBtn {
+  margin-top: $spacing-lg;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(124, 58, 237, 0.4);
+
+  &:active { opacity: 0.9; transform: scale(0.98); }
+}
+
+.actionBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}

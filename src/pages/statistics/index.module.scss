@@ -1,0 +1,222 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+.header {
+  margin-bottom: $spacing-lg;
+}
+
+.title {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.sessionSelect {
+  margin-bottom: $spacing-lg;
+}
+
+.selectLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.sessionOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.sessionOption {
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-card;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: $color-primary;
+  }
+}
+
+.sessionOptionText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary-light;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.overviewCards {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.overviewCard {
+  flex: 1;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+}
+
+.overviewValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary-light;
+  display: block;
+}
+
+.overviewLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.tabBar {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  background: $color-bg-card;
+  padding: $spacing-xs;
+  border-radius: $radius-button;
+  border: 1rpx solid $color-border;
+}
+
+.tabItem {
+  flex: 1;
+  padding: $spacing-sm;
+  border-radius: $radius-button;
+  text-align: center;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  }
+}
+
+.tabText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.insightCard {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.insightTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.insightContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}
+
+.trueClueSection {
+  margin-bottom: $spacing-lg;
+}
+
+.trueClueList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.trueClueItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.trueClueInfo {
+  flex: 1;
+}
+
+.trueClueName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+}
+
+.trueClueRate {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.rateBarWrap {
+  width: 200rpx;
+  height: 12rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+  margin-left: $spacing-md;
+}
+
+.rateBarFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.highRate { background: linear-gradient(90deg, $color-success 0%, #34D399 100%); }
+.midRate { background: linear-gradient(90deg, $color-warning 0%, #FBBF24 100%); }
+.lowRate { background: linear-gradient(90deg, $color-error 0%, #F87171 100%); }
+
+.emptyTip {
+  padding: $spacing-xl * 2;
+  text-align: center;
+}
+
+.emptyTipText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

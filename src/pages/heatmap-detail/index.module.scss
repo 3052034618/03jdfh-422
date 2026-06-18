@@ -1,0 +1,138 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+.connectionHeader {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  text-align: center;
+}
+
+.connectionPair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.cardBox {
+  flex: 1;
+  background: rgba(124, 58, 237, 0.1);
+  border: 2rpx solid $color-primary;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.cardBoxName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.cardBoxDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis-multi(2);
+}
+
+.connectSymbol {
+  font-size: $font-size-xxl;
+  color: $color-primary-light;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.strengthSection {
+  margin-bottom: $spacing-md;
+}
+
+.strengthLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.strengthValue {
+  font-size: 64rpx;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.strengthBar {
+  height: 16rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: $radius-round;
+}
+
+.statusBreakdown {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.statusItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.statusItemValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+}
+
+.statusItemLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.playerList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.playerName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}

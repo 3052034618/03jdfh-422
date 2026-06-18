@@ -1,0 +1,416 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
+}
+
+.header {
+  margin-bottom: $spacing-lg;
+}
+
+.title {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  background: $color-bg-card;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  border: 1rpx solid $color-border;
+}
+
+.stepDot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: $radius-round;
+  background: $color-bg-hover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  }
+  &.done {
+    background: $color-success;
+  }
+}
+
+.stepDotText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  font-weight: $font-weight-semibold;
+
+  .active & { color: $color-text-white; }
+  .done & { color: $color-text-white; }
+}
+
+.stepLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  &.active { color: $color-primary-light; font-weight: $font-weight-medium; }
+  &.done { color: $color-success; }
+}
+
+.stepLine {
+  flex: 1;
+  height: 2rpx;
+  background: $color-border;
+
+  &.done { background: $color-success; }
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionTip {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.cardsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.cardWrapper {
+  width: calc(50% - 8rpx);
+}
+
+.groupsSection {
+  margin-bottom: $spacing-lg;
+}
+
+.groupCard {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.groupTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.statusSelector {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.statusOption {
+  padding: 8rpx 16rpx;
+  border-radius: $radius-sm;
+  background: $color-bg-hover;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: currentColor;
+  }
+
+  &.suspicious {
+    &.active { background: rgba(245, 158, 11, 0.15); }
+  }
+  &.certain {
+    &.active { background: rgba(220, 38, 38, 0.15); }
+  }
+  &.confused {
+    &.active { background: rgba(107, 114, 128, 0.2); }
+  }
+}
+
+.statusOptionText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  .suspicious & { .active & { color: $color-status-suspicious; } }
+  .certain & { .active & { color: $color-status-certain; } }
+  .confused & { .active & { color: $color-text-secondary; } }
+  .active & { font-weight: $font-weight-medium; }
+}
+
+.groupCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.groupedCardMini {
+  background: rgba(167, 139, 250, 0.1);
+  border: 1rpx solid $color-primary;
+  border-radius: $radius-sm;
+  padding: 8rpx 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.groupedCardText {
+  font-size: $font-size-xs;
+  color: $color-primary-light;
+  font-weight: $font-weight-medium;
+}
+
+.removeCardBtn {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: $radius-round;
+  background: rgba(220, 38, 38, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeCardText {
+  font-size: 20rpx;
+  color: $color-error;
+  line-height: 1;
+}
+
+.addCardHint {
+  background: $color-bg-hover;
+  border: 2rpx dashed $color-border;
+  border-radius: $radius-sm;
+  padding: 16rpx;
+  text-align: center;
+  margin-bottom: $spacing-md;
+}
+
+.addCardHintText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.removeGroupBtn {
+  padding: 8rpx 16rpx;
+  background: rgba(220, 38, 38, 0.1);
+  border-radius: $radius-sm;
+}
+
+.removeGroupText {
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
+.addGroupBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: $spacing-md;
+  background: rgba(124, 58, 237, 0.1);
+  border: 2rpx dashed $color-primary;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+
+  &:active { opacity: 0.8; }
+}
+
+.addGroupBtnText {
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+  font-weight: $font-weight-medium;
+}
+
+.confusionSection {
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.confusionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.confusionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.confusionCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.confusionItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.confusionSelect {
+  margin-bottom: $spacing-sm;
+}
+
+.confusionSelectLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.confusionSelectValue {
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 8rpx 14rpx;
+  border-radius: $radius-sm;
+  display: inline-block;
+}
+
+.confusionInput {
+  width: 100%;
+  min-height: 120rpx;
+  background: $color-bg-input;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.removeConfusionBtn {
+  margin-top: $spacing-sm;
+  padding: 8rpx;
+  text-align: center;
+}
+
+.removeConfusionText {
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
+.addConfusionBtn {
+  padding: $spacing-sm;
+  text-align: center;
+  border: 2rpx dashed $color-border;
+  border-radius: $radius-md;
+}
+
+.addConfusionText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.submitBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, $color-bg-page 30%);
+  display: flex;
+  gap: $spacing-md;
+}
+
+.resetBtn {
+  flex: 0 0 auto;
+  padding: 0 $spacing-lg;
+  height: $button-height-lg;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active { opacity: 0.8; }
+}
+
+.resetBtnText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.submitBtn {
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(124, 58, 237, 0.4);
+
+  &:active { opacity: 0.9; transform: scale(0.98); }
+}
+
+.submitBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.selectedBadge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: $radius-round;
+  background: $color-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selectedBadgeText {
+  font-size: 20rpx;
+  color: $color-text-white;
+  font-weight: $font-weight-bold;
+}
+
+.selectableCard {
+  position: relative;
+}

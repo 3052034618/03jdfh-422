@@ -1,0 +1,41 @@
+// ============================================
+// 主题配色变量（恐怖游戏测试 - 暗黑数据风格）
+// ============================================
+
+// 品牌主题色
+$color-primary: #7C3AED;
+$color-primary-light: #A78BFA;
+$color-primary-dark: #5B21B6;
+
+// 功能色 - 线索状态
+$color-status-suspicious: #F59E0B;
+$color-status-certain: #DC2626;
+$color-status-confused: #6B7280;
+
+// 通用功能色
+$color-success: #10B981;
+$color-warning: #F59E0B;
+$color-error: #DC2626;
+$color-info: #3B82F6;
+
+// 背景色
+$color-bg-page: #0F0F14;
+$color-bg-card: #1A1A24;
+$color-bg-hover: #252532;
+$color-bg-input: #252532;
+
+// 文本色
+$color-text-primary: #E5E7EB;
+$color-text-secondary: #9CA3AF;
+$color-text-tertiary: #6B7280;
+$color-text-disabled: #4B5563;
+$color-text-white: #FFFFFF;
+
+// 边框色
+$color-border: #2F2F3F;
+$color-divider: #252532;
+
+// 热区渐变
+$color-heatmap-weak: #7C3AED;
+$color-heatmap-medium: #C026D3;
+$color-heatmap-strong: #DC2626;

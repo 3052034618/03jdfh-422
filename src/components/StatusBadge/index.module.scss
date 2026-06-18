@@ -1,0 +1,38 @@
+@use '@/styles/variables.scss' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  white-space: nowrap;
+
+  &.sm {
+    padding: 4rpx 12rpx;
+    .text { font-size: $font-size-xs; }
+  }
+
+  &.md {
+    padding: 8rpx 20rpx;
+    .text { font-size: $font-size-sm; }
+  }
+}
+
+.text {
+  font-weight: $font-weight-medium;
+}
+
+.suspicious {
+  background: rgba(245, 158, 11, 0.15);
+  .text { color: $color-status-suspicious; }
+}
+
+.certain {
+  background: rgba(220, 38, 38, 0.15);
+  .text { color: $color-status-certain; }
+}
+
+.confused {
+  background: rgba(107, 114, 128, 0.2);
+  .text { color: $color-text-secondary; }
+}

@@ -1,0 +1,69 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    background: rgba(124, 58, 237, 0.1);
+    box-shadow: 0 0 0 2rpx rgba(124, 58, 237, 0.3);
+  }
+
+  &.grouped {
+    border-color: $color-primary-light;
+    background: rgba(167, 139, 250, 0.08);
+  }
+
+  &.compact {
+    padding: $spacing-sm $spacing-md;
+    .description { display: none; }
+    .name { font-size: $font-size-sm; }
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+}
+
+.category {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.trueTag {
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2rpx 10rpx;
+  border-radius: $radius-xs;
+}
+
+.trueTagText {
+  font-size: 20rpx;
+  color: $color-success;
+}
+
+.name {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.description {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+  @include text-ellipsis-multi(2);
+}

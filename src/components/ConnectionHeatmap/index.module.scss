@@ -1,0 +1,197 @@
+@use '@/styles/variables.scss' as *;
+
+.wrapper {
+  padding: $spacing-md 0;
+}
+
+.empty {
+  padding: $spacing-xl;
+  text-align: center;
+}
+
+.emptyText {
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.legend {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  border: 1rpx solid $color-border;
+}
+
+.legendTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.legendItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.legendBar {
+  width: 40rpx;
+  height: 12rpx;
+  border-radius: $radius-xs;
+}
+
+.legendLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.statItem {
+  flex: 1;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+  border: 1rpx solid $color-border;
+}
+
+.statValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary-light;
+  display: block;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.list {
+  max-height: 800rpx;
+}
+
+.connectionItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+  border: 1rpx solid $color-border;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+}
+
+.rank {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rankText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.connectionInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardNames {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 6rpx;
+}
+
+.cardName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  max-width: 180rpx;
+}
+
+.linkSymbol {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.statusRow {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.statusChip {
+  background: $color-bg-hover;
+  padding: 2rpx 10rpx;
+  border-radius: $radius-xs;
+}
+
+.statusChipText {
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+}
+
+.strengthWrap {
+  width: 140rpx;
+  flex-shrink: 0;
+}
+
+.strengthPercent {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  text-align: right;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.strengthBar {
+  height: 8rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}

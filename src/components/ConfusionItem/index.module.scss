@@ -1,0 +1,91 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  border: 1rpx solid $color-border;
+}
+
+.header {
+  margin-bottom: $spacing-md;
+}
+
+.cardInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.cardName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.countBadge {
+  background: rgba(245, 158, 11, 0.15);
+  padding: 4rpx 14rpx;
+  border-radius: $radius-xs;
+}
+
+.countText {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  font-weight: $font-weight-medium;
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.entry {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+}
+
+.quoteMark {
+  flex-shrink: 0;
+}
+
+.quoteText {
+  font-size: $font-size-xl;
+  color: $color-primary;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.entryContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.entryText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.entryPlayer {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.toggleBtn {
+  margin-top: $spacing-sm;
+  padding: $spacing-xs;
+  text-align: center;
+}
+
+.toggleText {
+  font-size: $font-size-xs;
+  color: $color-primary-light;
+}
